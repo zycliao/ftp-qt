@@ -6,6 +6,8 @@
 
 QT       += core gui
 
+LIBS += -lpthread libwsock32 libws2_32
+
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = ftpClient
@@ -23,10 +25,12 @@ OUT_PWD = $$PWD/../../bin/release
 
 SOURCES += \
         main.cpp \
-        ftpclient.cpp
+        ftpclient.cpp \
+    client.cpp
 
 HEADERS += \
         ftpclient.h\
+    client.h
 
 
 FORMS += \
