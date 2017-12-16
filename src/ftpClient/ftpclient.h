@@ -11,6 +11,8 @@ namespace Ui {
 class ftpClient;
 }
 
+enum subThreadTask {TConnect, TDisconnect, TCd};
+
 class ClientThread;
 
 class ftpClient : public QMainWindow
@@ -28,6 +30,8 @@ private slots:
     void recvSuccess();
     void recvClearList();
 
+    void on_fileList_itemDoubleClicked(QListWidgetItem *item);
+
 private:
     Ui::ftpClient *ui;
     Client* curClient;
@@ -43,6 +47,8 @@ public:
     explicit ClientThread();
     ~ClientThread();
     void bind(Client *c);
+    subThreadTask task;
+    char* charg;
 
 protected:
     void run();

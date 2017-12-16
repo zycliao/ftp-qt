@@ -28,17 +28,20 @@ ftpClient::~ftpClient()
 
 void ftpClient::on_connectButton_clicked()
 {
+    if(!clientThread->isRunning()){
     if(!connected) {
         QString ip_addr = ui->ipEdit->text();
         QString username = ui->userEdit->text();
         QString password = ui->passEdit->text();
         curClient->login(ip_addr, username, password);
+        clientThread->task = TConnect;
         clientThread->start();
     }
     else {
         curClient->disconnect();
         connected = false;
         ui->connectButton->setText("Connect");
+    }
     }
 }
 
@@ -78,9 +81,23 @@ void ClientThread::bind(Client *c) {
 }
 
 void ClientThread::run() {
-    if(!client->connectServer())
-        emit emitSuccess();
-    flushList();
+    switch (task) {
+    case TConnect:
+        if(!client->connectServer())
+            emit emitSuccess();
+        flushList();
+        break;
+    case TDisconnect:
+
+        break;
+    case TCd:
+        client->changeDir(charg);
+        flushList();
+        break;
+    default:
+        break;
+    }
+
 }
 
 void ClientThread::stop() {
@@ -103,3 +120,11 @@ void ClientThread::flushList() {
 
 
 
+
+void ftpClient::on_fileList_itemDoubleClicked(QListWidgetItem *item)
+{
+    QString a = item->text();
+    clientThread->charg = qstr2pch(a);
+    clientThread->task = TCd;
+    clientThread->start();
+}

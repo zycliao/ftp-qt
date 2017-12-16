@@ -19,25 +19,26 @@ private:
     int executeFTPCmd(int stateCode, char* cmd, char* arg=nullptr);
     int getStateCode();
     int getPortNum();
-    void listPwd();
-public:
-    Client();
-    ~Client();
+    int listPwd();
+    int intoPasv();
+
+    SOCKADDR_IN serverAddr;
     QString ip_addr, username, password, INFO;
     char* buf = new char[BUFLEN];
     char* databuf = new char[DATABUFLEN];
     SOCKET controlSocket;
     SOCKET dataSocket;
     char* pwd;
-    std::vector<char*> pwdFiles;
 
+public:
+    Client();
+    ~Client();
     int connectServer();
     int disconnect();
+    int changeDir(char* tardir);
     int login(QString ip_addr, QString username, QString password);
 
+    std::vector<char*> pwdFiles;
 };
-
-
-
 
 #endif // CLIENT_H

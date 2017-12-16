@@ -1,4 +1,5 @@
 #include "client.h"
+using namespace std;
 
 Client::Client() {
 
@@ -19,8 +20,7 @@ int Client::login(QString ip_addr, QString username, QString password) {
 int Client::connectServer() {
     using namespace std;
     WSADATA dat;
-    SOCKADDR_IN serverAddr;
-    int dataPort, ret;
+    int ret;
 
     //初始化，很重要
     if (WSAStartup(MAKEWORD(2,2),&dat)!=0)  //Windows Sockets Asynchronous启动
@@ -71,22 +71,7 @@ int Client::connectServer() {
     //密码
     executeFTPCmd(230, "PASS", qstr2pch(password));            //230
 
-    //切换到被动模式
-    executeFTPCmd(227, "PASV");                //227
-
-    //返回的信息格式为---h1,h2,h3,h4,p1,p2
-    //其中h1,h2,h3,h4为服务器的地址，p1*256+p2为数据端口
-    dataPort=getPortNum();
-    //客户端数据传输socket
-    dataSocket=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
-    serverAddr.sin_port=htons(dataPort);    //更改连接参数中的port值
-    ret=connect(dataSocket,(struct sockaddr*)&serverAddr,sizeof(serverAddr));
-    if(ret==SOCKET_ERROR)
-    {
-        cout<<"Data Socket connecting Failed: "<<GetLastError()<<endl;
-        return -1;
-    }
-    cout<<"Data Socket connecting is success."<<endl;
+    intoPasv();
     listPwd();
     return 0;
 }
@@ -177,8 +162,11 @@ int Client::getPortNum()
     return num1*256+num2;
 }
 
-void Client::listPwd() {
+int Client::listPwd() {
     executeFTPCmd(150, "NLST", ".");
+    memset(buf, 0, BUFLEN);
+    recv(controlSocket, buf, BUFLEN, 0);
+    std::cout<<buf<<std::endl;
     memset(databuf, 0, DATABUFLEN);
     recv(dataSocket, databuf, DATABUFLEN, 0);
     std::vector<char*> result;
@@ -189,6 +177,36 @@ void Client::listPwd() {
         one_result = strtok(nullptr, DELIMITER);
     }
     pwdFiles = result;
+    return 0;
 }
 
+int Client::changeDir(char* tardir) {
+    memset(buf, 0, BUFLEN);
+    executeFTPCmd(226, "CWD", tardir);
+    executeFTPCmd(257, "PWD");
+    intoPasv();
+    listPwd();
+    return 0;
+}
+
+int Client::intoPasv() {
+    int dataPort, ret;
+    //切换到被动模式
+    executeFTPCmd(227, "PASV");                //227
+
+    //返回的信息格式为---h1,h2,h3,h4,p1,p2
+    //其中h1,h2,h3,h4为服务器的地址，p1*256+p2为数据端口
+    dataPort=getPortNum();
+    //客户端数据传输socket
+    dataSocket=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+    serverAddr.sin_port=htons(dataPort);    //更改连接参数中的port值
+    ret=connect(dataSocket,(struct sockaddr*)&serverAddr,sizeof(serverAddr));
+    if(ret==SOCKET_ERROR)
+    {
+        cout<<"Data Socket connecting Failed: "<<GetLastError()<<endl;
+        return -1;
+    }
+    cout<<"Data Socket connecting is success."<<endl;
+    return 0;
+}
 
