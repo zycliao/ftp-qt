@@ -24,6 +24,9 @@ public:
 private slots:
     void on_connectButton_clicked();
     void recvListItem(QString);
+    void recvInfo(QString);
+    void recvSuccess();
+    void recvClearList();
 
 private:
     Ui::ftpClient *ui;
@@ -40,14 +43,19 @@ public:
     explicit ClientThread();
     ~ClientThread();
     void bind(Client *c);
+
 protected:
     void run();
 private:
     Client* client;
     void flushList();
-    volatile bool stopped;
+private slots:
+    void stop();
 signals:
     void emitListItem(QString);
+    void emitInfo(QString);
+    void emitSuccess();
+    void emitClearList();
 };
 
 

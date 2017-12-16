@@ -7,6 +7,15 @@ ftpClient::ftpClient(QWidget *parent) :
 {
     curClient = new Client();
     clientThread = new ClientThread();
+    clientThread->bind(curClient);
+
+    connect(clientThread, SIGNAL(emitListItem(QString)), this, SLOT(recvListItem(QString)));
+    connect(clientThread, SIGNAL(emitSuccess()), this, SLOT(recvSuccess()));
+    connect(clientThread, SIGNAL(finished()), clientThread, SLOT(stop()));
+    connect(clientThread, SIGNAL(emitClearList()), this, SLOT(recvClearList()));
+    //若执行此行，run结束后clientThread会调用析构
+    //connect(clientThread, SIGNAL(finished()), clientThread, SLOT(deleteLater()));
+
     ui->setupUi(this);
 }
 
@@ -14,28 +23,51 @@ ftpClient::~ftpClient()
 {
     delete ui;
     delete curClient;
+    delete clientThread;
 }
 
 void ftpClient::on_connectButton_clicked()
 {
-
-    QString ip_addr = ui->ipEdit->text();
-    QString username = ui->userEdit->text();
-    QString password = ui->passEdit->text();
-    curClient->login(ip_addr, username, password);
-    clientThread->bind(curClient);
-    connect(clientThread, SIGNAL(emitListItem(QString)), this, SLOT(recvListItem(QString)));
-    //connect(clientThread, SIGNAL(finished()), clientThread, SLOT(deleteLater()));
-    clientThread->start();
+    if(!connected) {
+        QString ip_addr = ui->ipEdit->text();
+        QString username = ui->userEdit->text();
+        QString password = ui->passEdit->text();
+        curClient->login(ip_addr, username, password);
+        clientThread->start();
+    }
+    else {
+        curClient->disconnect();
+        connected = false;
+        ui->connectButton->setText("Connect");
+    }
 }
 
+//slot function------------------------------------------------
 void ftpClient::recvListItem(QString item) {
     ui->fileList->addItem(item);
 }
 
-//sub thread-------------------------------------------
+void ftpClient::recvInfo(QString info) {
+
+}
+
+void ftpClient::recvSuccess() {
+    if(!connected) {
+        connected = true;
+        ui->connectButton->setText("Disconnect");
+    }
+    else {
+        connected = false;
+        ui->connectButton->setText("Connect");
+    }
+}
+
+void ftpClient::recvClearList() {
+    ui->fileList->clear();
+}
+
+//sub thread---------------------------------------------------
 ClientThread::ClientThread() {
-    stopped = false;
 }
 
 ClientThread::~ClientThread() {
@@ -46,12 +78,19 @@ void ClientThread::bind(Client *c) {
 }
 
 void ClientThread::run() {
-    client->connectServer();
+    if(!client->connectServer())
+        emit emitSuccess();
     flushList();
-    stopped = false;
+}
+
+void ClientThread::stop() {
+    isInterruptionRequested();
+    quit();
+    wait();
 }
 
 void ClientThread::flushList() {
+    emit emitClearList();
     emit emitListItem(QString("."));
     emit emitListItem(QString(".."));
     int num = client->pwdFiles.size();

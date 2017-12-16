@@ -23,7 +23,7 @@ private:
 public:
     Client();
     ~Client();
-    QString ip_addr, username, password;
+    QString ip_addr, username, password, INFO;
     char* buf = new char[BUFLEN];
     char* databuf = new char[DATABUFLEN];
     SOCKET controlSocket;
@@ -32,6 +32,7 @@ public:
     std::vector<char*> pwdFiles;
 
     int connectServer();
+    int disconnect();
     int login(QString ip_addr, QString username, QString password);
 
 };

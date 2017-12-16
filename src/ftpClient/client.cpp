@@ -5,6 +5,7 @@ Client::Client() {
 }
 
 Client::~Client() {
+    disconnect();
     delete buf;
     delete databuf;
 }
@@ -83,7 +84,6 @@ int Client::connectServer() {
     if(ret==SOCKET_ERROR)
     {
         cout<<"Data Socket connecting Failed: "<<GetLastError()<<endl;
-        system("pause");
         return -1;
     }
     cout<<"Data Socket connecting is success."<<endl;
@@ -91,6 +91,18 @@ int Client::connectServer() {
     return 0;
 }
 
+int Client::disconnect() {
+    pwd = nullptr;
+    ip_addr, username, password, INFO = "";
+    pwdFiles.clear();
+    memset(buf, 0, BUFLEN);
+    memset(databuf, 0, DATABUFLEN);
+    closesocket(dataSocket);
+    closesocket(controlSocket);
+    WSACleanup();
+}
+
+//private function---------------------------------------------------------
 //通过控制socket执行FTP命令
 int Client::executeFTPCmd(int stateCode, char* cmd, char* arg)
 {
@@ -114,6 +126,7 @@ int Client::executeFTPCmd(int stateCode, char* cmd, char* arg)
         return -1;
     }
 }
+
 //从返回信息中获取状态码
 int Client::getStateCode()
 {
@@ -177,4 +190,5 @@ void Client::listPwd() {
     }
     pwdFiles = result;
 }
+
 
