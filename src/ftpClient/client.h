@@ -6,7 +6,7 @@
 #include <WinSock2.h>
 #include <QString>
 #include <common.h>
-#include <vector>
+#include <algorithm>
 
 const int PORT = 21;
 const int BUFLEN = 100;
@@ -19,6 +19,7 @@ private:
     int executeFTPCmd(int stateCode, char* cmd, char* arg=nullptr);
     int getStateCode();
     int getPortNum();
+    int getFileSize(char* fname);
     int listPwd();
     int intoPasv();
 
@@ -37,6 +38,7 @@ public:
     int disconnect();
     int changeDir(char* tardir);
     int login(QString ip_addr, QString username, QString password);
+    int downFile(char* remoteName, char* localDir);
 
     std::vector<char*> pwdFiles;
 };

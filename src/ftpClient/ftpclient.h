@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QListWidgetItem>
+#include <QFileDialog>
 #include "common.h"
 #include "client.h"
 #include <iostream>
@@ -11,7 +12,7 @@ namespace Ui {
 class ftpClient;
 }
 
-enum subThreadTask {TConnect, TDisconnect, TCd};
+enum subThreadTask {TConnect, TDisconnect, TCd, TDown};
 
 class ClientThread;
 
@@ -32,6 +33,8 @@ private slots:
 
     void on_fileList_itemDoubleClicked(QListWidgetItem *item);
 
+    void on_downButton_clicked();
+
 private:
     Ui::ftpClient *ui;
     Client* curClient;
@@ -48,7 +51,7 @@ public:
     ~ClientThread();
     void bind(Client *c);
     subThreadTask task;
-    char* charg;
+    std::vector<char*> arglist;
 
 protected:
     void run();

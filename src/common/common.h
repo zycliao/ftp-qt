@@ -4,6 +4,7 @@
 #include <QString>
 #include <QThread>
 #include <string>
+#include <vector>
 
 char* qstr2pch(QString src);
 

@@ -87,6 +87,42 @@ int Client::disconnect() {
     WSACleanup();
 }
 
+int Client::changeDir(char* tardir) {
+    memset(buf, 0, BUFLEN);
+    executeFTPCmd(250, "CWD", tardir);
+    executeFTPCmd(257, "PWD");
+    intoPasv();
+    listPwd();
+    return 0;
+}
+
+int Client::downFile(char* remoteName, char* localDir){
+    char* localFile = strcat(localDir, "/");
+    localFile = strcat(localFile, remoteName);
+    ofstream ofile;
+    ofile.open(localFile);
+    intoPasv();
+    int fsize = getFileSize(remoteName);
+    executeFTPCmd(150, "RETR", remoteName);
+    memset(databuf, 0, DATABUFLEN);
+    int recvNum;
+    recvNum = min(DATABUFLEN, fsize);
+    recv(dataSocket, databuf, recvNum, 0);
+    fsize -= recvNum;
+    for( ; fsize > 0;) {
+        databuf[recvNum] = '\0';
+        ofile<<databuf;
+        recvNum = min(DATABUFLEN, fsize);
+        recv(dataSocket, databuf, recvNum, 0);
+        fsize -= recvNum;
+    }
+    databuf[recvNum] = '\0';
+    ofile<<databuf;
+    ofile.close();
+    memset(buf, 0, BUFLEN);
+    recv(controlSocket, buf, BUFLEN, 0);
+}
+
 //private function---------------------------------------------------------
 //通过控制socket执行FTP命令
 int Client::executeFTPCmd(int stateCode, char* cmd, char* arg)
@@ -117,7 +153,7 @@ int Client::getStateCode()
 {
     int num=0;
     char* p = buf;
-    while(p != NULL)
+    while(p != nullptr)
     {
         num=10*num+(*p)-'0';
         p++;
@@ -180,15 +216,6 @@ int Client::listPwd() {
     return 0;
 }
 
-int Client::changeDir(char* tardir) {
-    memset(buf, 0, BUFLEN);
-    executeFTPCmd(226, "CWD", tardir);
-    executeFTPCmd(257, "PWD");
-    intoPasv();
-    listPwd();
-    return 0;
-}
-
 int Client::intoPasv() {
     int dataPort, ret;
     //切换到被动模式
@@ -210,3 +237,20 @@ int Client::intoPasv() {
     return 0;
 }
 
+int Client::getFileSize(char* fname) {
+    executeFTPCmd(213, "SIZE", fname);
+    char* p = buf;
+    while(p != nullptr && *p != ' ') {
+        p++;
+    }
+    p++;
+    int num = 0;
+    while(p != nullptr && *p != '\r') {
+        num *= 10;
+        num += (*p - '0');
+        p++;
+    }
+    memset(buf, 0, BUFLEN);
+    return num;
+
+}

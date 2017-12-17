@@ -26,6 +26,7 @@ ftpClient::~ftpClient()
     delete clientThread;
 }
 
+//slot function------------------------------------------------
 void ftpClient::on_connectButton_clicked()
 {
     if(!clientThread->isRunning()){
@@ -45,7 +46,34 @@ void ftpClient::on_connectButton_clicked()
     }
 }
 
-//slot function------------------------------------------------
+void ftpClient::on_fileList_itemDoubleClicked(QListWidgetItem *item)
+{
+    QString a = item->text();
+    if(!clientThread->isRunning()) {
+    char* b = qstr2pch(a);
+    clientThread->arglist[0] = b;
+    clientThread->task = TCd;
+    clientThread->start();
+    }
+}
+
+void ftpClient::on_downButton_clicked()
+{
+    QListWidgetItem* curItem = ui->fileList->currentItem();
+    QString downName;
+    if(curItem)
+        downName = curItem->text();
+    else
+        return;
+    QString saveDir = QFileDialog::getExistingDirectory(this, "选择存放路径");
+    if(!clientThread->isRunning()) {
+    clientThread->task = TDown;
+    clientThread->arglist[0] = qstr2pch(downName);
+    clientThread->arglist[1] = qstr2pch(saveDir);
+    clientThread->start();
+    }
+}
+
 void ftpClient::recvListItem(QString item) {
     ui->fileList->addItem(item);
 }
@@ -71,6 +99,8 @@ void ftpClient::recvClearList() {
 
 //sub thread---------------------------------------------------
 ClientThread::ClientThread() {
+    for(int i=0; i<5; i++)
+        arglist.push_back("");
 }
 
 ClientThread::~ClientThread() {
@@ -91,8 +121,11 @@ void ClientThread::run() {
 
         break;
     case TCd:
-        client->changeDir(charg);
+        client->changeDir(arglist[0]);
         flushList();
+        break;
+    case TDown:
+        client->downFile(arglist[0], arglist[1]);
         break;
     default:
         break;
@@ -120,11 +153,3 @@ void ClientThread::flushList() {
 
 
 
-
-void ftpClient::on_fileList_itemDoubleClicked(QListWidgetItem *item)
-{
-    QString a = item->text();
-    clientThread->charg = qstr2pch(a);
-    clientThread->task = TCd;
-    clientThread->start();
-}
