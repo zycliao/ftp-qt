@@ -15,7 +15,7 @@ void ServerThread::bind(Server *s) {
 }
 
 void ServerThread::run() {
-    std::cout<<"!!!!"<<std::endl;
+    std::cout<<"sub thread started"<<std::endl;
     server->setup();
     server->listenClient();
 }
