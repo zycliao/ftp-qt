@@ -26,11 +26,13 @@ OUT_PWD = $$PWD/../../bin/release
 SOURCES += \
         main.cpp \
         ftpclient.cpp \
-    client.cpp
+    client.cpp \
+    clientthread.cpp
 
 HEADERS += \
         ftpclient.h\
-    client.h
+    client.h \
+    clientthread.h
 
 
 FORMS += \

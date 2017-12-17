@@ -2,7 +2,9 @@
 #define FTPSERVER_H
 
 #include <QMainWindow>
-#include "common.h"
+#include "server.h"
+#include "serverthread.h"
+#include <QThread>
 
 namespace Ui {
 class ftpServer;
@@ -15,9 +17,15 @@ class ftpServer : public QMainWindow
 public:
     explicit ftpServer(QWidget *parent = 0);
     ~ftpServer();
+    Server* curServer;
+    ServerThread* serverThread;
+
+private slots:
+    void on_startButton_clicked();
 
 private:
     Ui::ftpServer *ui;
 };
+
 
 #endif // FTPSERVER_H

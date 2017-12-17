@@ -6,13 +6,11 @@
 #include <QFileDialog>
 #include "common.h"
 #include "client.h"
-#include <iostream>
+#include "clientthread.h"
 
 namespace Ui {
 class ftpClient;
 }
-
-enum subThreadTask {TConnect, TDisconnect, TCd, TDown};
 
 class ClientThread;
 
@@ -30,9 +28,7 @@ private slots:
     void recvInfo(QString);
     void recvSuccess();
     void recvClearList();
-
     void on_fileList_itemDoubleClicked(QListWidgetItem *item);
-
     void on_downButton_clicked();
 
 private:
@@ -42,30 +38,6 @@ private:
     bool connected = false;
 };
 
-//sub thread-------------------------------------
-class ClientThread : public QThread
-{
-    Q_OBJECT
-public:
-    explicit ClientThread();
-    ~ClientThread();
-    void bind(Client *c);
-    subThreadTask task;
-    std::vector<char*> arglist;
-
-protected:
-    void run();
-private:
-    Client* client;
-    void flushList();
-private slots:
-    void stop();
-signals:
-    void emitListItem(QString);
-    void emitInfo(QString);
-    void emitSuccess();
-    void emitClearList();
-};
 
 
 #endif // FTPCLIENT_H

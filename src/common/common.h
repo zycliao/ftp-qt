@@ -5,6 +5,8 @@
 #include <QThread>
 #include <string>
 #include <vector>
+#include <QThread>
+#include <iostream>
 
 char* qstr2pch(QString src);
 

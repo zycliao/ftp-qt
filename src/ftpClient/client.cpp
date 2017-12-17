@@ -18,7 +18,6 @@ int Client::login(QString ip_addr, QString username, QString password) {
 }
 
 int Client::connectServer() {
-    using namespace std;
     WSADATA dat;
     int ret;
 

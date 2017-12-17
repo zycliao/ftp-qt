@@ -3,10 +3,10 @@
 
 #include <iostream>
 #include <fstream>
-#include <WinSock2.h>
 #include <QString>
 #include <common.h>
 #include <algorithm>
+#include <WinSock2.h>
 
 const int PORT = 21;
 const int BUFLEN = 100;
