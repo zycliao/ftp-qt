@@ -29,8 +29,8 @@
      <rect>
       <x>20</x>
       <y>100</y>
-      <width>75</width>
-      <height>23</height>
+      <width>81</width>
+      <height>31</height>
      </rect>
     </property>
     <property name="text">
@@ -115,13 +115,13 @@
      <string>123</string>
     </property>
    </widget>
-   <widget class="QTextEdit" name="textEdit">
+   <widget class="QTextEdit" name="infoEdit">
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>260</y>
+      <y>150</y>
       <width>301</width>
-      <height>81</height>
+      <height>191</height>
      </rect>
     </property>
    </widget>

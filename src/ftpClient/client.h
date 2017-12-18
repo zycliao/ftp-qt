@@ -7,40 +7,45 @@
 #include <common.h>
 #include <algorithm>
 #include <WinSock2.h>
+#include "infothread.h"
 
 const int PORT = 21;
-const int BUFLEN = 100;
+const int BUFLEN = 1000;
 const int DATABUFLEN = 1000;
 const char* const DELIMITER = "\r\n";
 
 class Client
 {
 private:
-    int executeFTPCmd(int stateCode, char* cmd, char* arg=nullptr);
+    //int executeFTPCmd(int stateCode, char* cmd, char* arg=nullptr);
     int getStateCode();
     int getPortNum();
-    int getFileSize(char* fname);
+    int getFileSize(std::string fname);
     int listPwd();
     int intoPasv();
+    int recvControl(int stateCode);
+    int executeCmd(std::string cmd);
 
     SOCKADDR_IN serverAddr;
-    QString ip_addr, username, password, INFO;
+    std::string ip_addr, username, password, INFO;
     char* buf = new char[BUFLEN];
     char* databuf = new char[DATABUFLEN];
     SOCKET controlSocket;
     SOCKET dataSocket;
-    char* pwd;
+    std::string pwd;
+    std::string recvInfo;
 
 public:
     Client();
     ~Client();
     int connectServer();
     int disconnect();
-    int changeDir(char* tardir);
+    int changeDir(std::string tardir);
     int login(QString ip_addr, QString username, QString password);
-    int downFile(char* remoteName, char* localDir);
+    int downFile(std::string remoteName, std::string localDir);
 
-    std::vector<char*> pwdFiles;
+    std::vector<std::string> pwdFiles;
+    InfoThread* infoThread;
 };
 
 #endif // CLIENT_H

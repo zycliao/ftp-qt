@@ -27,12 +27,14 @@ SOURCES += \
         main.cpp \
         ftpclient.cpp \
     client.cpp \
-    clientthread.cpp
+    clientthread.cpp \
+    infothread.cpp
 
 HEADERS += \
         ftpclient.h\
     client.h \
-    clientthread.h
+    clientthread.h \
+    infothread.h
 
 
 FORMS += \

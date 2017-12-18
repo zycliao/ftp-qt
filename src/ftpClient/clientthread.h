@@ -13,7 +13,8 @@ public:
     ~ClientThread();
     void bind(Client *c);
     subThreadTask task;
-    std::vector<char*> arglist;
+    std::vector<std::string> arglist;
+    Client* curClient;
 
 protected:
     void run();

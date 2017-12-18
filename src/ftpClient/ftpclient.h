@@ -5,7 +5,6 @@
 #include <QListWidgetItem>
 #include <QFileDialog>
 #include "common.h"
-#include "client.h"
 #include "clientthread.h"
 
 namespace Ui {
@@ -33,9 +32,9 @@ private slots:
 
 private:
     Ui::ftpClient *ui;
-    Client* curClient;
     ClientThread* clientThread;
     bool connected = false;
+    QString allInfo;
 };
 
 

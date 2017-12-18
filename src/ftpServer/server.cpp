@@ -4,11 +4,12 @@ using namespace std;
 
 Server::Server()
 {
-
+    config = new ServerConfig;
 }
 
 Server::~Server()
 {
+    delete config;
     closesocket(listenSocket);
     closesocket(clientSocket);
     WSACleanup();
@@ -16,6 +17,12 @@ Server::~Server()
 
 int Server::setup() {
     WSADATA dat;
+
+    if(!config->configed) {
+        cout << "Not configed" << endl;
+        return -1;
+    }
+    pwd = config->wd;
 
     if(WSAStartup(MAKEWORD(2,2),&dat)!=0)
     {
@@ -47,11 +54,26 @@ int Server::setup() {
         return -1;
     }
 
+    dataListenSocket=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+    if(dataListenSocket==INVALID_SOCKET)
+    {
+        cout << "Creating Data Socket Failed: " << GetLastError() << endl;
+        system("pause");
+        return -1;
+    }
+
+    dataListenAddr.sin_family = AF_INET;
+    dataListenAddr.sin_addr.S_un.S_addr = INADDR_ANY;
+
+    getLocalIp();
+
     return 0;
 }
 
 int Server::listenClient() {
     int ret;
+    int pasvPort, pasvArg1, pasvArg2;
+    string pasvIp;
     int remoteAddrLen = sizeof(remoteAddr);
     clientSocket = accept(listenSocket, (SOCKADDR *)&remoteAddr, &remoteAddrLen);
     if(clientSocket == INVALID_SOCKET) return -1;
@@ -61,11 +83,26 @@ int Server::listenClient() {
     string username, password;
     username = arg;
     cout << username << endl;
-    if(username != "anonymous") {
+    if(username == "anonymous") {
+        if(!config->allowAnony) {
+            sendMessage("530 Anonymous is not allowed");
+            return -1;
+        }
         sendMessage("331 Please specify the password.");
         waitMessage("PASS");
         password = arg;
         sendMessage("230 Login successful.");
+    }
+    else {
+        sendMessage("331 Please specify the password.");
+        waitMessage("PASS");
+        password = arg;
+        if(username == config->username && password == config->password)
+            sendMessage("230 Login successful.");
+        else {
+            sendMessage("530 Login incorrect.");
+            return -1;
+        }
     }
 
     while(true) {
@@ -84,20 +121,37 @@ int Server::listenClient() {
             continue;
         }
         if(cmd == "PWD") {
-            sendMessage("257 \"xxx\" is the current directory");
+            sendMessage("257 " + pwd + " is the current directory");
             continue;
         }
-        if(cmd == "TYPE A") {
-            sendMessage("200 Switching to ASCII mode.");
+        if(cmd == "TYPE") {
+            if (arg == "A")
+                sendMessage("200 Switching to ASCII mode.");
+            else
+                sendMessage("200 Switching to xxx mode.");
             continue;
         }
         if(cmd == "PASV") {
-            sendMessage("221 Bye");
+            pasvPort = setPasv();
+            pasvArg2 = pasvPort % 256;
+            pasvArg1 = pasvPort / 256;
+            pasvIp = localIp;
+            int loc = pasvIp.find('.');
+            while(loc>=0) {
+                pasvIp=pasvIp.replace(loc, 1, ",");
+                loc = pasvIp.find('.');
+            }
+
+            int dataAddrLen = sizeof(dataAddr);
+            sendMessage("227 Entering Passive Mode (" + pasvIp +
+                        ", " + to_string(pasvArg1) + "," + to_string(pasvArg2) + ").");
+            dataSocket = accept(dataListenSocket, (SOCKADDR *)&dataAddr, &dataAddrLen);
             continue;
         }
     }
 }
 
+//private functions-----------------------------------------------
 int Server::sendMessage(string s) {
     s.push_back('\r');
     s.push_back('\n');
@@ -193,4 +247,42 @@ int Server::recvStr() {
         arg = "";
     }
     return 0;
+}
+
+int Server::setPasv() {
+    default_random_engine random(time(NULL));
+    uniform_int_distribution<int> dis1(config->pasvDown, config->pasvUp);
+    int pasvPort = dis1(random);
+    dataListenAddr.sin_port = htons(pasvPort);
+    while(bind(dataListenSocket, (LPSOCKADDR)&dataListenAddr, sizeof(dataListenAddr)) == SOCKET_ERROR) {
+        cout << "Data Socket Bind Error!" << endl;
+        pasvPort = dis1(random);
+        dataListenAddr.sin_port = htons(pasvPort);
+    }
+
+    if(listen(dataListenSocket, 5) == SOCKET_ERROR) {
+        cout << "Listen Error: " << GetLastError() << endl;
+        system("pause");
+        return -1;
+    }
+
+    return pasvPort;
+}
+
+bool Server::getLocalIp() {
+    char hostname[256];
+    char ip[256];
+    int ret = gethostname(hostname, sizeof(hostname));
+    if (ret == SOCKET_ERROR)
+    {
+        return false;
+    }
+    HOSTENT* host = gethostbyname(hostname);
+    if (host == NULL)
+    {
+        return false;
+    }
+    strcpy(ip, inet_ntoa(*(in_addr*)*host->h_addr_list));
+    localIp = ip;
+    return true;
 }

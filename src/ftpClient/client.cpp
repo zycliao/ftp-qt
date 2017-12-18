@@ -2,19 +2,20 @@
 using namespace std;
 
 Client::Client() {
-
+    infoThread = new InfoThread;
 }
 
 Client::~Client() {
     disconnect();
+    delete infoThread;
     delete buf;
     delete databuf;
 }
 
 int Client::login(QString ip_addr, QString username, QString password) {
-    this->ip_addr = ip_addr;
-    this->username = username;
-    this->password = password;
+    this->ip_addr = ip_addr.toStdString();
+    this->username = username.toStdString();
+    this->password = password.toStdString();
 }
 
 int Client::connectServer() {
@@ -24,7 +25,8 @@ int Client::connectServer() {
     //初始化，很重要
     if (WSAStartup(MAKEWORD(2,2),&dat)!=0)  //Windows Sockets Asynchronous启动
     {
-        cout<<"Init Falied: "<<GetLastError()<<endl;
+        cout<<"Init Failed: "<<GetLastError()<<endl;
+        infoThread->sendInfo("Init Failed!\n");
         system("pause");
         return -1;
     }
@@ -34,12 +36,13 @@ int Client::connectServer() {
     if(controlSocket==INVALID_SOCKET)
     {
         cout<<"Creating Control Socket Failed: "<<GetLastError()<<endl;
+        infoThread->sendInfo("Creating Control Socket Failed.\n");
         system("pause");
         return -1;
     }
     //构建服务器访问参数结构体
     serverAddr.sin_family=AF_INET;
-    serverAddr.sin_addr.S_un.S_addr=inet_addr(ip_addr.toStdString().c_str()); //地址
+    serverAddr.sin_addr.S_un.S_addr=inet_addr(ip_addr.c_str()); //地址
     serverAddr.sin_port=htons(PORT);            //端口
     memset(serverAddr.sin_zero,0,sizeof(serverAddr.sin_zero));
 
@@ -47,28 +50,25 @@ int Client::connectServer() {
     ret=connect(controlSocket,(struct sockaddr*)&serverAddr,sizeof(serverAddr));
     if(ret==SOCKET_ERROR)
     {
-        cout<<"Control Socket connecting Failed: "<<GetLastError()<<endl;
+        cout<<"Control Socket Connecting Failed: "<<GetLastError()<<endl;
+        infoThread->sendInfo("Control Socket Connecting Failed\n");
         system("pause");
         return -1;
     }
     cout<<"Control Socket connecting is success."<<endl;
     //接收返回状态信息
-    recv(controlSocket,buf,100,0);
-    cout<<buf;       //220
-
-    //根据返回信息提取状态码，进行判断
-    if(getStateCode() != 220)
-    {
-        cout<<"Error: Control Socket connecting Failed"<<endl;
-        system("pause");
-        exit(-1);
-    }
+    Sleep(300);
+    recvControl(220);
 
     //用户名
-    executeFTPCmd(331, "USER", qstr2pch(username));                //331
+    executeCmd("USER " + username);
+    recvControl(331);
+    //executeFTPCmd(331, "USER", qstr2pch(username));                //331
 
     //密码
-    executeFTPCmd(230, "PASS", qstr2pch(password));            //230
+    executeCmd("PASS " + password);
+    recvControl(230);
+    //executeFTPCmd(230, "PASS", qstr2pch(password));            //230
 
     intoPasv();
     listPwd();
@@ -76,7 +76,6 @@ int Client::connectServer() {
 }
 
 int Client::disconnect() {
-    pwd = nullptr;
     ip_addr, username, password, INFO = "";
     pwdFiles.clear();
     memset(buf, 0, BUFLEN);
@@ -86,23 +85,30 @@ int Client::disconnect() {
     WSACleanup();
 }
 
-int Client::changeDir(char* tardir) {
+int Client::changeDir(string tardir) {
     memset(buf, 0, BUFLEN);
-    executeFTPCmd(250, "CWD", tardir);
-    executeFTPCmd(257, "PWD");
+    executeCmd("CWD "+tardir);
+    //recvControl(226);
+    recvControl(250);
+    //executeCmd("PWD");
+    //recvControl(257);
+    listPwd();
     intoPasv();
+    //executeCmd("MLSD");
+    //recvControl(150);
+    //recvControl(226);
     listPwd();
     return 0;
 }
 
-int Client::downFile(char* remoteName, char* localDir){
-    char* localFile = strcat(localDir, "/");
-    localFile = strcat(localFile, remoteName);
+int Client::downFile(string remoteName, string localDir){
+    string localFile = localDir + "/" + remoteName;
     ofstream ofile;
     ofile.open(localFile);
     intoPasv();
     int fsize = getFileSize(remoteName);
-    executeFTPCmd(150, "RETR", remoteName);
+    executeCmd("RETR "+remoteName);
+    recvControl(150);
     memset(databuf, 0, DATABUFLEN);
     int recvNum;
     recvNum = min(DATABUFLEN, fsize);
@@ -118,14 +124,14 @@ int Client::downFile(char* remoteName, char* localDir){
     databuf[recvNum] = '\0';
     ofile<<databuf;
     ofile.close();
-    memset(buf, 0, BUFLEN);
-    recv(controlSocket, buf, BUFLEN, 0);
+    recvControl(226);
 }
 
 //private function---------------------------------------------------------
-//通过控制socket执行FTP命令
+/*//通过控制socket执行FTP命令
 int Client::executeFTPCmd(int stateCode, char* cmd, char* arg)
 {
+    int ret;
     memset(buf, 0, BUFLEN);
     if(arg)
         sprintf(buf, "%s %s\r\n", cmd, arg);
@@ -134,7 +140,8 @@ int Client::executeFTPCmd(int stateCode, char* cmd, char* arg)
     int cmdlen = (int)strlen(buf);
     send(controlSocket, buf, cmdlen, 0);
     memset(buf, 0, BUFLEN);
-    recv(controlSocket, buf, BUFLEN, 0);
+    while(true)
+    ret = recv(controlSocket, buf, BUFLEN, 0);
     std::cout << buf << std::endl;
     if(getStateCode() == stateCode)
     {
@@ -145,7 +152,40 @@ int Client::executeFTPCmd(int stateCode, char* cmd, char* arg)
         std::cout << "The StateCode is Error!" << std::endl;
         return -1;
     }
+}*/
+
+int Client::executeCmd(string cmd) {
+    cmd += "\r\n";
+    int cmdlen = cmd.size();
+    send(controlSocket, cmd.c_str(), cmdlen, 0);
+    return 0;
 }
+
+int Client::recvControl(int stateCode) {
+    Sleep(150); //TODO!!
+    memset(buf, 0, BUFLEN);
+    recvInfo.clear();
+    int infolen = recv(controlSocket, buf, BUFLEN, 0);
+    if(infolen==BUFLEN) {
+        cout << "ERROR! Too long information too receive!" << endl;
+        infoThread->sendInfo("ERROR! Too long information too receive!\n");
+        return -1;
+    }
+    buf[infolen] = '\0';
+    int t;
+    t = getStateCode();
+    recvInfo = buf;
+    cout << recvInfo << endl;
+    infoThread->sendInfo(recvInfo);
+    if(t == stateCode)
+        return 0;
+    else {
+        cout << "state code error!" << endl;
+        infoThread->sendInfo("state code error!\n");
+        return -1;
+    }
+}
+
 
 //从返回信息中获取状态码
 int Client::getStateCode()
@@ -161,7 +201,6 @@ int Client::getStateCode()
             break;
         }
     }
-
     return num;
 }
 
@@ -198,27 +237,30 @@ int Client::getPortNum()
 }
 
 int Client::listPwd() {
-    executeFTPCmd(150, "NLST", ".");
-    memset(buf, 0, BUFLEN);
-    recv(controlSocket, buf, BUFLEN, 0);
-    std::cout<<buf<<std::endl;
+    executeCmd("NLST");
+    recvControl(150);
     memset(databuf, 0, DATABUFLEN);
-    recv(dataSocket, databuf, DATABUFLEN, 0);
-    std::vector<char*> result;
-    char* one_result = nullptr;
-    one_result = strtok(databuf, DELIMITER);
-    while(one_result) {
-        result.push_back(one_result);
-        one_result = strtok(nullptr, DELIMITER);
+    int ret = recv(dataSocket, databuf, DATABUFLEN, 0);
+    databuf[ret] = '\0';
+    pwdFiles.clear();
+    string tempStr = databuf;
+    int r;
+    r = tempStr.find("\r\n");
+    while(r>=0) {
+        pwdFiles.push_back(tempStr.substr(0, r));
+        tempStr = tempStr.substr(r+2, tempStr.size());
+        r = tempStr.find("\r\n");
     }
-    pwdFiles = result;
+    recvControl(226);
     return 0;
 }
 
 int Client::intoPasv() {
     int dataPort, ret;
     //切换到被动模式
-    executeFTPCmd(227, "PASV");                //227
+    executeCmd("PASV");
+    recvControl(227);
+    //executeFTPCmd(227, "PASV");                //227
 
     //返回的信息格式为---h1,h2,h3,h4,p1,p2
     //其中h1,h2,h3,h4为服务器的地址，p1*256+p2为数据端口
@@ -236,8 +278,9 @@ int Client::intoPasv() {
     return 0;
 }
 
-int Client::getFileSize(char* fname) {
-    executeFTPCmd(213, "SIZE", fname);
+int Client::getFileSize(string fname) {
+    executeCmd("SIZE " + fname);
+    recvControl(213);
     char* p = buf;
     while(p != nullptr && *p != ' ') {
         p++;

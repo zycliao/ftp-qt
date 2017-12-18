@@ -3,21 +3,18 @@
 
 //Server thread-----------------------------------------------
 ServerThread::ServerThread() {
-
+    curServer = new Server;
 }
 
 ServerThread::~ServerThread() {
-
-}
-
-void ServerThread::bind(Server *s) {
-    server = s;
+    stop();  //TODO!!!!!!!!!!!1
+    delete curServer;
 }
 
 void ServerThread::run() {
     std::cout<<"sub thread started"<<std::endl;
-    server->setup();
-    server->listenClient();
+    curServer->setup();
+    curServer->listenClient();
 }
 
 void ServerThread::stop() {

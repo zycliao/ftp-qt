@@ -27,12 +27,14 @@ SOURCES += \
         main.cpp \
         ftpserver.cpp \
     server.cpp \
-    serverthread.cpp
+    serverthread.cpp \
+    serverconfig.cpp
 
 HEADERS += \
         ftpserver.h \
     server.h \
-    serverthread.h
+    serverthread.h \
+    serverconfig.h
 
 FORMS += \
         ftpserver.ui

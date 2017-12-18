@@ -5,14 +5,13 @@ ftpClient::ftpClient(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::ftpClient)
 {
-    curClient = new Client();
     clientThread = new ClientThread();
-    clientThread->bind(curClient);
 
     connect(clientThread, SIGNAL(emitListItem(QString)), this, SLOT(recvListItem(QString)));
     connect(clientThread, SIGNAL(emitSuccess()), this, SLOT(recvSuccess()));
     connect(clientThread, SIGNAL(finished()), clientThread, SLOT(stop()));
     connect(clientThread, SIGNAL(emitClearList()), this, SLOT(recvClearList()));
+    connect(clientThread->curClient->infoThread, SIGNAL(emitInfo(QString)), this, SLOT(recvInfo(QString)));
     //若执行此行，run结束后clientThread会调用析构
     //connect(clientThread, SIGNAL(finished()), clientThread, SLOT(deleteLater()));
 
@@ -23,7 +22,6 @@ ftpClient::~ftpClient()
 {
     delete ui;
     delete clientThread;
-    delete curClient;
 }
 
 //slot function------------------------------------------------
@@ -34,12 +32,12 @@ void ftpClient::on_connectButton_clicked()
         QString ip_addr = ui->ipEdit->text();
         QString username = ui->userEdit->text();
         QString password = ui->passEdit->text();
-        curClient->login(ip_addr, username, password);
+        clientThread->curClient->login(ip_addr, username, password);
         clientThread->task = TConnect;
         clientThread->start();
     }
     else {
-        curClient->disconnect();
+        clientThread->curClient->disconnect();
         connected = false;
         ui->connectButton->setText("Connect");
     }
@@ -50,8 +48,7 @@ void ftpClient::on_fileList_itemDoubleClicked(QListWidgetItem *item)
 {
     QString a = item->text();
     if(!clientThread->isRunning()) {
-    char* b = qstr2pch(a);
-    clientThread->arglist[0] = b;
+    clientThread->arglist[0] = a.toStdString();
     clientThread->task = TCd;
     clientThread->start();
     }
@@ -68,8 +65,8 @@ void ftpClient::on_downButton_clicked()
     QString saveDir = QFileDialog::getExistingDirectory(this, "选择存放路径");
     if(!clientThread->isRunning()) {
     clientThread->task = TDown;
-    clientThread->arglist[0] = qstr2pch(downName);
-    clientThread->arglist[1] = qstr2pch(saveDir);
+    clientThread->arglist[0] = downName.toStdString();
+    clientThread->arglist[1] = saveDir.toStdString();
     clientThread->start();
     }
 }
@@ -79,7 +76,14 @@ void ftpClient::recvListItem(QString item) {
 }
 
 void ftpClient::recvInfo(QString info) {
-
+    allInfo += info;
+    if(allInfo.size()>=10000) {
+        allInfo = allInfo.mid(allInfo.size()-10000);
+    }
+    ui->infoEdit->setText(allInfo);
+    QTextCursor cursor = ui->infoEdit->textCursor();
+    cursor.movePosition(QTextCursor::End);
+    ui->infoEdit->setTextCursor(cursor);
 }
 
 void ftpClient::recvSuccess() {

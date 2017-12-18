@@ -3,19 +3,19 @@
 ClientThread::ClientThread() {
     for(int i=0; i<5; i++)
         arglist.push_back("");
+    curClient = new Client();
+
 }
 
 ClientThread::~ClientThread() {
+    delete curClient;
 }
 
-void ClientThread::bind(Client *c) {
-    client = c;
-}
 
 void ClientThread::run() {
     switch (task) {
     case TConnect:
-        if(!client->connectServer())
+        if(!curClient->connectServer())
             emit emitSuccess();
         flushList();
         break;
@@ -23,11 +23,11 @@ void ClientThread::run() {
 
         break;
     case TCd:
-        client->changeDir(arglist[0]);
+        curClient->changeDir(arglist[0]);
         flushList();
         break;
     case TDown:
-        client->downFile(arglist[0], arglist[1]);
+        curClient->downFile(arglist[0], arglist[1]);
         break;
     default:
         break;
@@ -46,10 +46,10 @@ void ClientThread::flushList() {
     emit emitClearList();
     emit emitListItem(QString("."));
     emit emitListItem(QString(".."));
-    int num = client->pwdFiles.size();
+    int num = curClient->pwdFiles.size();
     QString item;
     for(int i=0; i<num; i++) {
-        item = pch2qstr(client->pwdFiles[i]);
+        item = QString::fromStdString(curClient->pwdFiles[i]);
         emit emitListItem(item);
     }
 }

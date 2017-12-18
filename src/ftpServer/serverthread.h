@@ -11,13 +11,13 @@ class ServerThread : public QThread
 public:
     explicit ServerThread();
     ~ServerThread();
-    void bind(Server *s);
+    Server* curServer;
 
 protected:
     void run();
 
 private:
-    Server* server;
+
 
 private slots:
     void stop();
