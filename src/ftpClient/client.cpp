@@ -72,7 +72,6 @@ int Client::connectServer() {
     recvControl(230);
     //executeFTPCmd(230, "PASS", qstr2pch(password));            //230
 
-    intoPasv();
     listPwd();
     return 0;
 }
@@ -229,6 +228,7 @@ int Client::getPortNum()
 }
 
 int Client::listPwd() {
+    intoPasv();
     executeCmd("NLST");
     recvControl(150);
     memset(databuf, 0, DATABUFLEN);
@@ -315,7 +315,7 @@ int Client::upFile(string localName) {
     memset(databuf, 0, DATABUFLEN);
     send(dataSocket, databuf, 1, 0);
     fclose(ifile);
+    closesocket(dataSocket);
     recvControl(226);
-
     listPwd();
 }

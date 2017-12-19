@@ -4,8 +4,10 @@
 #include "common.h"
 #include "serverconfig.h"
 #include <WinSock2.h>
+#include <windows.h>
 #include <random>
 #include <time.h>
+#include <dirent.h>
 
 const int PORT = 21;
 const int BUFLEN = 255;
@@ -41,6 +43,8 @@ private:
     int recvStr();
     int setPasv();
     bool getLocalIp();
+    std::vector<std::string> getPwdInfo();
+    std::vector<std::string> getFileSize(std::string fname);
 };
 
 #endif // SERVER_H

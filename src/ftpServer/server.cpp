@@ -2,6 +2,19 @@
 
 using namespace std;
 
+void char2Wchar(const char *chr, wchar_t *wchar, int size)
+{
+    MultiByteToWideChar(CP_ACP, 0, chr,
+        strlen(chr) + 1, wchar, size / sizeof(wchar[0]));
+}
+
+
+void wchar2Char(const wchar_t *wchar, char *chr, int length)
+{
+    WideCharToMultiByte(CP_ACP, 0, wchar, -1,
+        chr, length, NULL, NULL);
+}
+
 Server::Server()
 {
     config = new ServerConfig;
@@ -148,6 +161,37 @@ int Server::listenClient() {
             dataSocket = accept(dataListenSocket, (SOCKADDR *)&dataAddr, &dataAddrLen);
             continue;
         }
+
+        if(cmd == "LIST") {
+            sendMessage("150 Here comes the directory listing.");
+            if (arg == "-al") {
+                string allInfo;
+                string curFile;
+                vector<string> sizeAndType;
+                vector<string> allFiles = getPwdInfo();
+                for(int i=0; i<allFiles.size(); i++) {
+                    curFile = allFiles[i];
+                    sizeAndType = getFileSize(curFile);
+                    if(sizeAndType.size()==0)
+                        continue;
+                    allInfo += sizeAndType[1];
+                    allInfo += "--------- 1 user group ";
+                    allInfo += sizeAndType[0];
+                    allInfo += " Dec 10 14:50 ";
+                    allInfo += curFile;
+                    allInfo += "\r\n";
+                }
+                send(dataSocket, allInfo.c_str(), allInfo.size(), 0);
+                // Must close the data socket!!!
+                closesocket(dataSocket);
+                sendMessage("226 Directory send OK.");
+                return 0;
+            }
+            else {
+                cout << cmd << " " << arg << endl;
+                return -1;
+            }
+        }
     }
 }
 
@@ -285,4 +329,45 @@ bool Server::getLocalIp() {
     strcpy(ip, inet_ntoa(*(in_addr*)*host->h_addr_list));
     localIp = ip;
     return true;
+}
+
+vector<string> Server::getPwdInfo() {
+    DIR* dir;
+    dirent* ptr;
+    vector<string> allFiles;
+    dir = opendir(pwd.c_str());
+    while((ptr = readdir(dir)) != NULL)
+        allFiles.push_back(ptr->d_name);
+    return allFiles;
+}
+
+vector<string> Server::getFileSize(string fname) {
+    vector<string> sizeAndAttrib;
+    const char* fullname;
+    string strfullname = (pwd+"/"+fname);
+    fullname = strfullname.c_str();
+    wchar_t* wfullname = new wchar_t[strfullname.size()*2];
+    //wfullname = (wchar_t *)malloc(sizeof(wchar_t)* strfullname.size()/2);
+    char2Wchar(fullname, wfullname, sizeof(wchar_t)*strfullname.size());
+    wfullname[strfullname.size()] = 0;
+    DWORD fAttr = GetFileAttributes(wfullname);
+    delete wfullname;
+    if(fAttr == INVALID_FILE_ATTRIBUTES) {
+        return sizeAndAttrib;
+    }
+    if(fAttr == FILE_ATTRIBUTE_DIRECTORY) {
+        sizeAndAttrib.push_back("0");
+        sizeAndAttrib.push_back("d");
+    }
+    else {
+        FILE* file = fopen((pwd+'/'+fname).c_str(), "rb");
+        int size;
+        if(file) {
+            size = filelength(fileno(file));
+            fclose(file);
+        }
+        sizeAndAttrib.push_back(to_string(size));
+        sizeAndAttrib.push_back("-");
+    }
+    return sizeAndAttrib;
 }
