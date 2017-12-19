@@ -47,7 +47,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>192.168.242.138</string>
+     <string>192.168.242.139</string>
     </property>
    </widget>
    <widget class="QLineEdit" name="userEdit">
@@ -138,6 +138,19 @@
      <string>Download</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="upButton">
+    <property name="geometry">
+     <rect>
+      <x>260</x>
+      <y>50</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Upload</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -148,6 +161,12 @@
      <height>23</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+   </widget>
+   <addaction name="menuHelp"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">

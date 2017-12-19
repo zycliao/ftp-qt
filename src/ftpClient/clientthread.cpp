@@ -20,7 +20,7 @@ void ClientThread::run() {
         flushList();
         break;
     case TDisconnect:
-
+        curClient->disconnect();
         break;
     case TCd:
         curClient->changeDir(arglist[0]);
@@ -28,6 +28,10 @@ void ClientThread::run() {
         break;
     case TDown:
         curClient->downFile(arglist[0], arglist[1]);
+        break;
+    case TUp:
+        curClient->upFile(arglist[0]);
+        flushList();
         break;
     default:
         break;

@@ -6,7 +6,9 @@ Client::Client() {
 }
 
 Client::~Client() {
-    disconnect();
+    closesocket(dataSocket);
+    closesocket(controlSocket);
+    WSACleanup();
     delete infoThread;
     delete buf;
     delete databuf;
@@ -76,6 +78,8 @@ int Client::connectServer() {
 }
 
 int Client::disconnect() {
+    executeCmd("QUIT");
+    recvControl(221);
     ip_addr, username, password, INFO = "";
     pwdFiles.clear();
     memset(buf, 0, BUFLEN);
@@ -88,15 +92,8 @@ int Client::disconnect() {
 int Client::changeDir(string tardir) {
     memset(buf, 0, BUFLEN);
     executeCmd("CWD "+tardir);
-    //recvControl(226);
     recvControl(250);
-    //executeCmd("PWD");
-    //recvControl(257);
-    listPwd();
     intoPasv();
-    //executeCmd("MLSD");
-    //recvControl(150);
-    //recvControl(226);
     listPwd();
     return 0;
 }
@@ -128,64 +125,59 @@ int Client::downFile(string remoteName, string localDir){
 }
 
 //private function---------------------------------------------------------
-/*//通过控制socket执行FTP命令
-int Client::executeFTPCmd(int stateCode, char* cmd, char* arg)
-{
-    int ret;
-    memset(buf, 0, BUFLEN);
-    if(arg)
-        sprintf(buf, "%s %s\r\n", cmd, arg);
-    else
-        sprintf(buf, "%s\r\n", cmd);
-    int cmdlen = (int)strlen(buf);
-    send(controlSocket, buf, cmdlen, 0);
-    memset(buf, 0, BUFLEN);
-    while(true)
-    ret = recv(controlSocket, buf, BUFLEN, 0);
-    std::cout << buf << std::endl;
-    if(getStateCode() == stateCode)
-    {
-        return 0;
-    }
-    else
-    {
-        std::cout << "The StateCode is Error!" << std::endl;
-        return -1;
-    }
-}*/
-
 int Client::executeCmd(string cmd) {
     cmd += "\r\n";
     int cmdlen = cmd.size();
+    infoThread->sendInfo(cmd);
+    cout << cmd;
     send(controlSocket, cmd.c_str(), cmdlen, 0);
     return 0;
 }
 
-int Client::recvControl(int stateCode) {
-    Sleep(150); //TODO!!
-    memset(buf, 0, BUFLEN);
-    recvInfo.clear();
-    int infolen = recv(controlSocket, buf, BUFLEN, 0);
-    if(infolen==BUFLEN) {
-        cout << "ERROR! Too long information too receive!" << endl;
-        infoThread->sendInfo("ERROR! Too long information too receive!\n");
-        return -1;
-    }
-    buf[infolen] = '\0';
-    int t;
-    t = getStateCode();
-    recvInfo = buf;
-    cout << recvInfo << endl;
-    infoThread->sendInfo(recvInfo);
-    if(t == stateCode)
-        return 0;
-    else {
-        cout << "state code error!" << endl;
-        infoThread->sendInfo("state code error!\n");
-        return -1;
-    }
-}
+// TODO:This function needs to be modified so that
+// long information could be received.
+int Client::recvControl(int stateCode, string errorInfo) {
+    if(errorInfo.size()==1)
+        errorInfo = "state code error!";
+    if(nextInfo.size()==0) {
+        int t;
+        Sleep(50);
+        memset(buf, 0, BUFLEN);
+        recvInfo.clear();
+        int infolen = recv(controlSocket, buf, BUFLEN, 0);
+        if(infolen==BUFLEN) {
+            cout << "ERROR! Too long information too receive!" << endl;
+            infoThread->sendInfo("ERROR! Too long information too receive!\n");
+            return -1;
+        }
+        buf[infolen] = '\0';
+        t = getStateCode();
+        recvInfo = buf;
+        cout << recvInfo << endl;
 
+        // JUNK
+        int temp = recvInfo.find("\r\n226");
+        if(temp>=0) {
+            nextInfo = recvInfo.substr(temp+2);
+        }
+        // \JUNK
+        infoThread->sendInfo(recvInfo);
+        if(t == stateCode)
+            return 0;
+        else {
+            cout << errorInfo << endl;
+            infoThread->sendInfo(errorInfo);
+            return -1;
+        }
+    }
+    else {
+        recvInfo = nextInfo;
+        nextInfo.clear();
+        return 0;
+    }
+
+
+}
 
 //从返回信息中获取状态码
 int Client::getStateCode()
@@ -295,4 +287,35 @@ int Client::getFileSize(string fname) {
     memset(buf, 0, BUFLEN);
     return num;
 
+}
+
+int Client::upFile(string localName) {
+    // TODO:change to C++ style
+    FILE* ifile = fopen(localName.c_str(), "rb");
+    if(!ifile) {
+        cout << "fail to open the file!\n";
+        infoThread->sendInfo("fail to open the file!");
+        return -1;
+    }
+
+    //get file name
+    string localFileName;
+    int p = localName.find_last_of("/");
+    localFileName = localName.substr(p+1);
+
+    intoPasv();
+    executeCmd("STOR "+localFileName);
+    recvControl(150, "Permission denied.");
+    int count;
+    while(!feof(ifile))
+    {
+        count = fread(databuf, 1, DATABUFLEN, ifile);
+        send(dataSocket, databuf, count, 0);
+    }
+    memset(databuf, 0, DATABUFLEN);
+    send(dataSocket, databuf, 1, 0);
+    fclose(ifile);
+    recvControl(226);
+
+    listPwd();
 }

@@ -37,9 +37,11 @@ void ftpClient::on_connectButton_clicked()
         clientThread->start();
     }
     else {
-        clientThread->curClient->disconnect();
+        clientThread->task = TDisconnect;
+        clientThread->start();
         connected = false;
         ui->connectButton->setText("Connect");
+        ui->fileList->clear();
     }
     }
 }
@@ -62,7 +64,7 @@ void ftpClient::on_downButton_clicked()
         downName = curItem->text();
     else
         return;
-    QString saveDir = QFileDialog::getExistingDirectory(this, "选择存放路径");
+    QString saveDir = QFileDialog::getExistingDirectory(this, "Choose save path");
     if(!clientThread->isRunning()) {
     clientThread->task = TDown;
     clientThread->arglist[0] = downName.toStdString();
@@ -101,5 +103,11 @@ void ftpClient::recvClearList() {
     ui->fileList->clear();
 }
 
-
-
+void ftpClient::on_upButton_clicked()
+{
+    std::string localFile;
+    localFile = QFileDialog::getOpenFileName(this, "Choose the file to upload").toStdString();
+    clientThread->task = TUp;
+    clientThread->arglist[0] = localFile;
+    clientThread->start();
+}

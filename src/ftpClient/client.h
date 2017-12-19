@@ -23,7 +23,7 @@ private:
     int getFileSize(std::string fname);
     int listPwd();
     int intoPasv();
-    int recvControl(int stateCode);
+    int recvControl(int stateCode, std::string errorInfo="0");
     int executeCmd(std::string cmd);
 
     SOCKADDR_IN serverAddr;
@@ -32,8 +32,8 @@ private:
     char* databuf = new char[DATABUFLEN];
     SOCKET controlSocket;
     SOCKET dataSocket;
-    std::string pwd;
     std::string recvInfo;
+    std::string nextInfo; //JUNK
 
 public:
     Client();
@@ -43,9 +43,11 @@ public:
     int changeDir(std::string tardir);
     int login(QString ip_addr, QString username, QString password);
     int downFile(std::string remoteName, std::string localDir);
+    int upFile(std::string localName);
 
     std::vector<std::string> pwdFiles;
     InfoThread* infoThread;
+    std::string pwd;
 };
 
 #endif // CLIENT_H

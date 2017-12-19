@@ -30,6 +30,8 @@ private slots:
     void on_fileList_itemDoubleClicked(QListWidgetItem *item);
     void on_downButton_clicked();
 
+    void on_upButton_clicked();
+
 private:
     Ui::ftpClient *ui;
     ClientThread* clientThread;
