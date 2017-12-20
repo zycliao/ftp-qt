@@ -25,6 +25,7 @@ Server::~Server()
     delete config;
     closesocket(listenSocket);
     closesocket(clientSocket);
+    closesocket(dataSocket);
     WSACleanup();
 }
 
@@ -63,14 +64,6 @@ int Server::setup() {
 
     if(listen(listenSocket, 5) == SOCKET_ERROR) {
         cout << "Listen Error: " << GetLastError() << endl;
-        system("pause");
-        return -1;
-    }
-
-    dataListenSocket=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
-    if(dataListenSocket==INVALID_SOCKET)
-    {
-        cout << "Creating Data Socket Failed: " << GetLastError() << endl;
         system("pause");
         return -1;
     }
@@ -134,7 +127,7 @@ int Server::listenClient() {
             continue;
         }
         if(cmd == "PWD") {
-            sendMessage("257 " + pwd + " is the current directory");
+            sendMessage("257 \"" + pwd + "\" is the current directory");
             continue;
         }
         if(cmd == "TYPE") {
@@ -159,6 +152,7 @@ int Server::listenClient() {
             sendMessage("227 Entering Passive Mode (" + pasvIp +
                         ", " + to_string(pasvArg1) + "," + to_string(pasvArg2) + ").");
             dataSocket = accept(dataListenSocket, (SOCKADDR *)&dataAddr, &dataAddrLen);
+            closesocket(dataListenSocket);
             continue;
         }
 
@@ -185,13 +179,43 @@ int Server::listenClient() {
                 // Must close the data socket!!!
                 closesocket(dataSocket);
                 sendMessage("226 Directory send OK.");
-                return 0;
+                continue;
             }
             else {
                 cout << cmd << " " << arg << endl;
                 return -1;
             }
         }
+
+        if(cmd == "CWD") {
+            string toDir = arg;
+            if(toDir.size()>=2 && toDir[1] == ':')
+                    pwd = toDir;
+                else {
+                    if(pwd[pwd.size()-1] != '/')
+                        pwd += "/";
+                    pwd += toDir;
+                }
+            sendMessage("250 CWD successfully.");
+            continue;
+        }
+
+        if(cmd == "CDUP") {
+            int p = pwd.find_last_of("/");
+            if(p==pwd.size()+1) {
+                pwd = pwd.substr(0, p);
+                p = pwd.find_last_of("/");
+            }
+            pwd = pwd.substr(0, p);
+            sendMessage("250 CDUP successfully.");
+            continue;
+        }
+
+        if(cmd == "QUIT") {
+            sendMessage("221 BYE!");
+            break;
+        }
+
     }
 }
 
@@ -294,6 +318,13 @@ int Server::recvStr() {
 }
 
 int Server::setPasv() {
+    dataListenSocket=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+    if(dataListenSocket==INVALID_SOCKET)
+    {
+        cout << "Creating Data Socket Failed: " << GetLastError() << endl;
+        system("pause");
+        return -1;
+    }
     default_random_engine random(time(NULL));
     uniform_int_distribution<int> dis1(config->pasvDown, config->pasvUp);
     int pasvPort = dis1(random);
@@ -302,6 +333,7 @@ int Server::setPasv() {
         cout << "Data Socket Bind Error!" << endl;
         pasvPort = dis1(random);
         dataListenAddr.sin_port = htons(pasvPort);
+        Sleep(100);
     }
 
     if(listen(dataListenSocket, 5) == SOCKET_ERROR) {
@@ -370,4 +402,15 @@ vector<string> Server::getFileSize(string fname) {
         sizeAndAttrib.push_back("-");
     }
     return sizeAndAttrib;
+}
+
+string Server::unix2Win() {
+    string winAddr = pwd;
+    int p;
+    p = winAddr.find('/');
+    while(p>=0) {
+        winAddr[p] = '\\';
+        p = winAddr.find('/');
+    }
+    return winAddr;
 }

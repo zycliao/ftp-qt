@@ -45,6 +45,7 @@ private:
     bool getLocalIp();
     std::vector<std::string> getPwdInfo();
     std::vector<std::string> getFileSize(std::string fname);
+    std::string unix2Win();
 };
 
 #endif // SERVER_H
