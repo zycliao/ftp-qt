@@ -121,15 +121,18 @@ int Server::listenClient() {
             sendMessage("215 Windows 10.");
             continue;
         }
+
         if(cmd == "FEAT") {
             sendMessage("211-Features:\nPASV");
             sendMessage("211 End");
             continue;
         }
+
         if(cmd == "PWD") {
             sendMessage("257 \"" + pwd + "\" is the current directory");
             continue;
         }
+
         if(cmd == "TYPE") {
             if (arg == "A")
                 sendMessage("200 Switching to ASCII mode.");
@@ -137,6 +140,7 @@ int Server::listenClient() {
                 sendMessage("200 Switching to xxx mode.");
             continue;
         }
+
         if(cmd == "PASV") {
             pasvPort = setPasv();
             pasvArg2 = pasvPort % 256;
@@ -227,7 +231,9 @@ int Server::listenClient() {
 
         if(cmd == "SIZE") {
             vector<string> sizeAndType = getFileSize(arg);
-            if(sizeAndType[1]=="d")
+            if(sizeAndType.size()!=2)
+                sendMessage("550 could not get file size.");
+            else if(sizeAndType[1]=="d")
                 sendMessage("550 Failed.");
             else
                 sendMessage("213 "+sizeAndType[0]);
@@ -256,6 +262,29 @@ int Server::listenClient() {
             fclose(ifile);
             closesocket(dataSocket);
             sendMessage("226 transfer complete.");
+            continue;
+        }
+
+        if(cmd == "STOR") {
+            int ret;
+            char tempbuf[DATABUFLEN+1];
+            sendMessage("150 OK to send data.");
+            string dstFilename = pathConcat(pwd, arg);
+            ofstream ofile;
+            ofile.open(dstFilename);
+            while(ret>0) {
+                ret = recv(dataSocket, tempbuf, DATABUFLEN, 0);
+                tempbuf[ret] = '\0';
+                ofile << tempbuf;
+            }
+            ofile.close();
+            //closesocket(dataSocket);
+            sendMessage("226 transfer complete.");
+            continue;
+        }
+
+        if(cmd == "SITE") {
+            sendMessage("550 ???");
             continue;
         }
 
@@ -292,58 +321,6 @@ int Server::waitMessage(string s) {
     else
         return 0;
 }
-
-int Server::getPortNum()
-{/*
-    int num1=0,num2=0;
-
-    char* p=buf;
-    int cnt=0;
-    while( 1 )
-    {
-        if(cnt == 4 && (*p) != ',')
-        {
-            num1 = 10*num1+(*p)-'0';
-        }
-        if(cnt == 5)
-        {
-            num2 = 10*num2+(*p)-'0';
-        }
-        if((*p) == ',')
-        {
-            cnt++;
-        }
-        p++;
-        if((*p) == ')')
-        {
-            break;
-        }
-    }
-    std::cout<<"The data port number is "<<num1*256+num2<<std::endl;
-    return num1*256+num2;*/
-}
-
-/*
-string Server::getCmd() {
-    string tempstr;
-    int idxr = buf.find('\r');
-    int idx = buf.find(' ');
-    if(idx >= 0) tempstr = buf.substr(0, idx);
-    else tempstr = buf;
-    return tempstr;
-}
-
-string Server::getArg() {
-    int idx = buf.find(' ') + 1;
-    int idxr = buf.find('\r');
-    if(idx >= 0) {
-        string arg = buf.substr(idx, idxr-idx);
-        return arg;
-    }
-    else {
-        return nullptr;
-    }
-} */
 
 int Server::recvStr() {
     char tempbuf[BUFLEN];
@@ -424,7 +401,7 @@ vector<string> Server::getPwdInfo() {
 vector<string> Server::getFileSize(string fname) {
     vector<string> sizeAndAttrib;
     const char* fullname;
-    string strfullname = (pwd+"/"+fname);
+    string strfullname = pathConcat(pwd, fname);
     fullname = strfullname.c_str();
     wchar_t* wfullname = new wchar_t[strfullname.size()*2];
     //wfullname = (wchar_t *)malloc(sizeof(wchar_t)* strfullname.size()/2);
