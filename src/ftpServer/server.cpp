@@ -168,6 +168,7 @@ int Server::listenClient() {
                     sizeAndType = getFileSize(curFile);
                     if(sizeAndType.size()==0)
                         continue;
+                    // TODO!!!!!!!!!!!!!!!!!!!
                     allInfo += sizeAndType[1];
                     allInfo += "--------- 1 user group ";
                     allInfo += sizeAndType[0];
@@ -187,7 +188,14 @@ int Server::listenClient() {
             }
         }
 
+        if(cmd == "NLST") {
+            sendMessage("150 Here comes the directory listing.");
+            //TODO!!!!!!!!!!!!!!!!
+        }
+
         if(cmd == "CWD") {
+            if(arg.size()==0)
+                continue;
             string toDir = arg;
             if(toDir.size()>=2 && toDir[1] == ':')
                     pwd = toDir;
@@ -208,6 +216,46 @@ int Server::listenClient() {
             }
             pwd = pwd.substr(0, p);
             sendMessage("250 CDUP successfully.");
+            continue;
+        }
+
+        if(cmd == "MDTM") {
+            //TODO!!!!!!!!!!!!!!!!
+            sendMessage("213 20171210191919");
+            continue;
+        }
+
+        if(cmd == "SIZE") {
+            vector<string> sizeAndType = getFileSize(arg);
+            if(sizeAndType[1]=="d")
+                sendMessage("550 Failed.");
+            else
+                sendMessage("213 "+sizeAndType[0]);
+            continue;
+        }
+
+        if(cmd == "RETR") {
+            // TODO:change to C++ style
+            string fullname = pathConcat(pwd, arg);
+            FILE* ifile = fopen(fullname.c_str(), "rb");
+            if(!ifile) {
+                cout << "fail to open the file!\n";
+                sendMessage("550 Failed!");
+                continue;
+            }
+            sendMessage("150 ready to transfer.");
+            char databuf[DATABUFLEN];
+            int count;
+            while(!feof(ifile))
+            {
+                count = fread(databuf, 1, DATABUFLEN, ifile);
+                send(dataSocket, databuf, count, 0);
+            }
+            memset(databuf, 0, DATABUFLEN);
+            send(dataSocket, databuf, 1, 0);
+            fclose(ifile);
+            closesocket(dataSocket);
+            sendMessage("226 transfer complete.");
             continue;
         }
 
@@ -413,4 +461,11 @@ string Server::unix2Win() {
         p = winAddr.find('/');
     }
     return winAddr;
+}
+
+string Server::pathConcat(string p1, string p2) {
+    if(p1[p1.size()-1]=='/')
+        return p1+p2;
+    else
+        return p1+"/"+p2;
 }
