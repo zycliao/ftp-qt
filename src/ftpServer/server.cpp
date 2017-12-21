@@ -36,7 +36,8 @@ int Server::setup() {
         cout << "Not configed" << endl;
         return -1;
     }
-    pwd = config->wd;
+    rootdir = config->wd;
+    pwd = abs2rel(rootdir);
 
     if(WSAStartup(MAKEWORD(2,2),&dat)!=0)
     {
@@ -182,6 +183,7 @@ int Server::listenClient() {
                 }
                 send(dataSocket, allInfo.c_str(), allInfo.size(), 0);
                 // Must close the data socket!!!
+                // the one that SENDS through data socket must close the data socket.
                 closesocket(dataSocket);
                 sendMessage("226 Directory send OK.");
                 continue;
@@ -201,13 +203,13 @@ int Server::listenClient() {
             if(arg.size()==0)
                 continue;
             string toDir = arg;
-            if(toDir.size()>=2 && toDir[1] == ':')
+            if(toDir[0]=='/')
                     pwd = toDir;
-                else {
-                    if(pwd[pwd.size()-1] != '/')
-                        pwd += "/";
-                    pwd += toDir;
-                }
+            else {
+                if(pwd[pwd.size()-1] != '/')
+                    pwd += "/";
+                pwd += toDir;
+            }
             sendMessage("250 CWD successfully.");
             continue;
         }
@@ -242,7 +244,7 @@ int Server::listenClient() {
 
         if(cmd == "RETR") {
             // TODO:change to C++ style
-            string fullname = pathConcat(pwd, arg);
+            string fullname = rel2abs(pathConcat(pwd, arg));
             FILE* ifile = fopen(fullname.c_str(), "rb");
             if(!ifile) {
                 cout << "fail to open the file!\n";
@@ -269,13 +271,16 @@ int Server::listenClient() {
             int ret;
             char tempbuf[DATABUFLEN+1];
             sendMessage("150 OK to send data.");
-            string dstFilename = pathConcat(pwd, arg);
+            string dstFilename = rel2abs(pathConcat(pwd, arg));
             ofstream ofile;
             ofile.open(dstFilename);
+            ret = recv(dataSocket, tempbuf, DATABUFLEN, 0);
             while(ret>0) {
-                ret = recv(dataSocket, tempbuf, DATABUFLEN, 0);
                 tempbuf[ret] = '\0';
+                // TODO:FILE
+                // EMERGENCY!!!!
                 ofile << tempbuf;
+                ret = recv(dataSocket, tempbuf, DATABUFLEN, 0);
             }
             ofile.close();
             //closesocket(dataSocket);
@@ -392,7 +397,9 @@ vector<string> Server::getPwdInfo() {
     DIR* dir;
     dirent* ptr;
     vector<string> allFiles;
-    dir = opendir(pwd.c_str());
+    string abspwd;
+    abspwd = rel2abs(pwd);
+    dir = opendir(abspwd.c_str());
     while((ptr = readdir(dir)) != NULL)
         allFiles.push_back(ptr->d_name);
     return allFiles;
@@ -401,7 +408,9 @@ vector<string> Server::getPwdInfo() {
 vector<string> Server::getFileSize(string fname) {
     vector<string> sizeAndAttrib;
     const char* fullname;
-    string strfullname = pathConcat(pwd, fname);
+    string abspwd;
+    abspwd = rel2abs(pwd);
+    string strfullname = pathConcat(abspwd, fname);
     fullname = strfullname.c_str();
     wchar_t* wfullname = new wchar_t[strfullname.size()*2];
     //wfullname = (wchar_t *)malloc(sizeof(wchar_t)* strfullname.size()/2);
@@ -417,7 +426,7 @@ vector<string> Server::getFileSize(string fname) {
         sizeAndAttrib.push_back("d");
     }
     else {
-        FILE* file = fopen((pwd+'/'+fname).c_str(), "rb");
+        FILE* file = fopen((abspwd+'/'+fname).c_str(), "rb");
         int size;
         if(file) {
             size = filelength(fileno(file));
@@ -429,20 +438,31 @@ vector<string> Server::getFileSize(string fname) {
     return sizeAndAttrib;
 }
 
-string Server::unix2Win() {
-    string winAddr = pwd;
-    int p;
-    p = winAddr.find('/');
-    while(p>=0) {
-        winAddr[p] = '\\';
-        p = winAddr.find('/');
-    }
-    return winAddr;
-}
-
 string Server::pathConcat(string p1, string p2) {
     if(p1[p1.size()-1]=='/')
         return p1+p2;
     else
         return p1+"/"+p2;
+}
+
+string Server::abs2rel(string abspath) {
+    string relpath;
+    if(rootdir[rootdir.size()-1]=='/')
+        rootdir = rootdir.substr(0, rootdir.size()-1);
+    if(abspath.find(rootdir)<0)
+        return "ERROR";
+    relpath = abspath.substr(rootdir.size());
+    if(relpath[0]!='/')
+        relpath = "/" + relpath;
+    return relpath;
+}
+
+string Server::rel2abs(string relpath) {
+    string abspath;
+    if(rootdir[rootdir.size()-1]=='/')
+        rootdir = rootdir.substr(0, rootdir.size()-1);
+    if(relpath[0]!='/')
+        return "ERROR";
+    abspath = rootdir + relpath;
+    return abspath;
 }

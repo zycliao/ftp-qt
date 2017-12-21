@@ -36,6 +36,7 @@ private:
     std::string cmd;
     std::string arg;
     std::string pwd;
+    std::string rootdir;
     std::string localIp;
 
     int getPortNum();
@@ -46,8 +47,9 @@ private:
     bool getLocalIp();
     std::vector<std::string> getPwdInfo();
     std::vector<std::string> getFileSize(std::string fname);
-    std::string unix2Win();
     std::string pathConcat(std::string, std::string);
+    std::string abs2rel(std::string);
+    std::string rel2abs(std::string);
 };
 
 #endif // SERVER_H
