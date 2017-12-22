@@ -3,7 +3,7 @@
 
 #include "client.h"
 
-enum subThreadTask{TConnect, TDisconnect, TCd, TDown, TUp};
+enum subThreadTask{TConnect, TDisconnect, TCd, TDown, TUp, TDele, TRmd, TRename, TMkd};
 
 class ClientThread : public QThread
 {

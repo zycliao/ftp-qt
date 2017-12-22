@@ -7,23 +7,13 @@
     <x>0</x>
     <y>0</y>
     <width>734</width>
-    <height>404</height>
+    <height>421</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>ftpClient</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <widget class="QListWidget" name="fileList">
-    <property name="geometry">
-     <rect>
-      <x>190</x>
-      <y>340</y>
-      <width>201</width>
-      <height>341</height>
-     </rect>
-    </property>
-   </widget>
    <widget class="QPushButton" name="connectButton">
     <property name="geometry">
      <rect>
@@ -119,9 +109,9 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>150</y>
+      <y>160</y>
       <width>301</width>
-      <height>191</height>
+      <height>201</height>
      </rect>
     </property>
    </widget>
@@ -151,7 +141,7 @@
      <string>Upload</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton">
+   <widget class="QPushButton" name="renameButton">
     <property name="geometry">
      <rect>
       <x>250</x>
@@ -183,7 +173,7 @@
       <x>340</x>
       <y>10</y>
       <width>381</width>
-      <height>331</height>
+      <height>351</height>
      </rect>
     </property>
     <column>
@@ -201,22 +191,19 @@
       <string>name</string>
      </property>
     </column>
-    <item>
-     <property name="text">
-      <string>1</string>
-     </property>
-     <property name="text">
-      <string>3</string>
-     </property>
-     <property name="text">
-      <string>2</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>2</string>
-     </property>
-    </item>
+   </widget>
+   <widget class="QPushButton" name="newButton">
+    <property name="geometry">
+     <rect>
+      <x>250</x>
+      <y>130</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>New dir</string>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">

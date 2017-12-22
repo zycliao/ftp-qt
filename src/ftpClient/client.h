@@ -45,6 +45,10 @@ public:
     int login(QString ip_addr, QString username, QString password);
     int downFile(std::string remoteName, std::string localDir);
     int upFile(std::string localName);
+    int deleteFile(std::string fname);
+    int deleteDir(std::string dname);
+    int rename(std::string src, std::string dst);
+    int mkDir(std::string name);
 
     InfoThread* infoThread;
     std::string pwd;

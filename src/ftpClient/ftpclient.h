@@ -5,6 +5,7 @@
 #include <QListWidgetItem>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
+#include <QInputDialog>
 #include <QFileDialog>
 #include "common.h"
 #include "clientthread.h"
@@ -24,16 +25,19 @@ public:
     ~ftpClient();
 
 private slots:
-    void on_connectButton_clicked();
     void recvListItem(QString, QString, QString);
     void recvInfo(QString);
     void recvSuccess();
     void recvClearList();
+
+    void on_connectButton_clicked();
     void on_downButton_clicked();
-
     void on_upButton_clicked();
-
     void on_fileTree_itemDoubleClicked(QTreeWidgetItem *item, int column);
+    void on_renameButton_clicked();
+    void on_pushButton_2_clicked();
+
+    void on_newButton_clicked();
 
 private:
     Ui::ftpClient *ui;

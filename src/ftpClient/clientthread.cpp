@@ -33,6 +33,22 @@ void ClientThread::run() {
         curClient->upFile(arglist[0]);
         flushList();
         break;
+    case TDele:
+        curClient->deleteFile(arglist[0]);
+        flushList();
+        break;
+    case TRmd:
+        curClient->deleteDir(arglist[0]);
+        flushList();
+        break;
+    case TRename:
+        curClient->rename(arglist[0], arglist[1]);
+        flushList();
+        break;
+    case TMkd:
+        curClient->mkDir(arglist[0]);
+        flushList();
+        break;
     default:
         break;
     }

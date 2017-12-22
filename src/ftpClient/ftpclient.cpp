@@ -117,3 +117,56 @@ void ftpClient::on_fileTree_itemDoubleClicked(QTreeWidgetItem *item, int column)
         clientThread->start();
     }
 }
+
+void ftpClient::on_renameButton_clicked()
+{
+    QTreeWidgetItem* curItem = ui->fileTree->currentItem();
+    QString srcName, dstName;
+    if(curItem)
+        srcName = curItem->text(2);
+    else
+        return;
+    if(srcName=="." || srcName=="..")
+        return;
+    dstName = QInputDialog::getText(this, "Please input a name", "New name of the file");
+    if(dstName.isEmpty())
+        return;
+    if(dstName=="." || dstName=="..")
+        return;
+    clientThread->arglist[0] = srcName.toStdString();
+    clientThread->arglist[1] = dstName.toStdString();
+    clientThread->task = TRename;
+    clientThread->start();
+}
+
+
+void ftpClient::on_pushButton_2_clicked()
+{
+    QTreeWidgetItem* curItem = ui->fileTree->currentItem();
+    QString fname;
+    if(curItem)
+        fname = curItem->text(2);
+    else
+        return;
+    clientThread->arglist[0] = fname.toStdString();
+    if(fname=="." || fname=="..")
+        return;
+    if(curItem->text(0)=="d")
+        clientThread->task = TRmd;
+    else
+        clientThread->task = TDele;
+    clientThread->start();
+}
+
+void ftpClient::on_newButton_clicked()
+{
+    QString name;
+    name = QInputDialog::getText(this, "Please input a name.", "Name of new directory");
+    if(name.isEmpty())
+        return;
+    if(name=="." || name=="..")
+        return;
+    clientThread->arglist[0] = name.toStdString();
+    clientThread->task = TMkd;
+    clientThread->start();
+}

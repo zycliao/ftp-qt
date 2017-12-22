@@ -356,3 +356,33 @@ void Client::removeSpace(string & src) {
         p = src.find(' ', p+1);
     }
 }
+
+int Client::deleteFile(string fname) {
+    executeCmd("DELE "+fname);
+    recvControl(250);
+    listPwd();
+    return 0;
+}
+
+int Client::deleteDir(string dname) {
+    executeCmd("RMD "+dname);
+    recvControl(250);
+    listPwd();
+    return 0;
+}
+
+int Client::rename(string src, string dst) {
+    executeCmd("RNFR "+src);
+    recvControl(350);
+    executeCmd("RNTO "+dst);
+    recvControl(250);
+    listPwd();
+    return 0;
+}
+
+int Client::mkDir(string name) {
+    executeCmd("MKD "+name);
+    recvControl(250);
+    listPwd();
+    return 0;
+}
