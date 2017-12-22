@@ -120,6 +120,7 @@ int Client::downFile(string remoteName, string localDir){
     databuf[recvNum] = '\0';
     ofile<<databuf;
     ofile.close();
+    closesocket(dataSocket);
     recvControl(226);
 }
 
@@ -207,11 +208,13 @@ int Client::getPortNum()
     {
         if(cnt == 4 && (*p) != ',')
         {
-            num1 = 10*num1+(*p)-'0';
+            if(*p<='9' && *p>='0')
+                num1 = 10*num1+(*p)-'0';
         }
         if(cnt == 5)
         {
-            num2 = 10*num2+(*p)-'0';
+            if(*p<='9' && *p>='0')
+                num2 = 10*num2+(*p)-'0';
         }
         if((*p) == ',')
         {
@@ -241,9 +244,6 @@ int Client::listPwd() {
     }
     removeSpace(fulllist);
 
-    cout << fulllist << endl;
-
-
     int lastp, lastq, p, q;
     vector<string> eachrow;
     string rawrow;
@@ -270,6 +270,7 @@ int Client::listPwd() {
         lastp = p + 2;
         p = fulllist.find("\r\n", lastp);
     }
+    closesocket(dataSocket);
     recvControl(226);
     return 0;
 }

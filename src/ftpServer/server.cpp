@@ -179,7 +179,7 @@ int Server::listenClient() {
                     allInfo += sizeAndType[0];
                     allInfo += " Dec 10 14:50 ";
                     allInfo += curFile;
-                    allInfo += "\r\n";
+                      allInfo += "\r\n";
                 }
                 send(dataSocket, allInfo.c_str(), allInfo.size(), 0);
                 // Must close the data socket!!!
@@ -283,7 +283,7 @@ int Server::listenClient() {
                 ret = recv(dataSocket, tempbuf, DATABUFLEN, 0);
             }
             ofile.close();
-            //closesocket(dataSocket);
+            closesocket(dataSocket);
             sendMessage("226 transfer complete.");
             continue;
         }
