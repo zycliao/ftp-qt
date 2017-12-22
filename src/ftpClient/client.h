@@ -25,6 +25,7 @@ private:
     int intoPasv();
     int recvControl(int stateCode, std::string errorInfo="0");
     int executeCmd(std::string cmd);
+    void removeSpace(std::string&);
 
     SOCKADDR_IN serverAddr;
     std::string ip_addr, username, password, INFO;
@@ -45,9 +46,9 @@ public:
     int downFile(std::string remoteName, std::string localDir);
     int upFile(std::string localName);
 
-    std::vector<std::string> pwdFiles;
     InfoThread* infoThread;
     std::string pwd;
+    std::vector<std::vector<std::string>> filelist;
 };
 
 #endif // CLIENT_H

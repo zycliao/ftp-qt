@@ -80,7 +80,7 @@ int Client::disconnect() {
     executeCmd("QUIT");
     recvControl(221);
     ip_addr, username, password, INFO = "";
-    pwdFiles.clear();
+    filelist.clear();
     memset(buf, 0, BUFLEN);
     memset(databuf, 0, DATABUFLEN);
     closesocket(dataSocket);
@@ -229,19 +229,46 @@ int Client::getPortNum()
 
 int Client::listPwd() {
     intoPasv();
-    executeCmd("NLST");
+    executeCmd("LIST -al");
     recvControl(150);
     memset(databuf, 0, DATABUFLEN);
-    int ret = recv(dataSocket, databuf, DATABUFLEN, 0);
-    databuf[ret] = '\0';
-    pwdFiles.clear();
-    string tempStr = databuf;
-    int r;
-    r = tempStr.find("\r\n");
-    while(r>=0) {
-        pwdFiles.push_back(tempStr.substr(0, r));
-        tempStr = tempStr.substr(r+2, tempStr.size());
-        r = tempStr.find("\r\n");
+    string fulllist;
+    int ret = recv(dataSocket, databuf, DATABUFLEN-1, 0);
+    while(ret>0) {
+        databuf[ret] = '\0';
+        fulllist += databuf;
+        ret = recv(dataSocket, databuf, DATABUFLEN-1, 0);
+    }
+    removeSpace(fulllist);
+
+    cout << fulllist << endl;
+
+
+    int lastp, lastq, p, q;
+    vector<string> eachrow;
+    string rawrow;
+    string item;
+    filelist.clear();
+    p = fulllist.find("\r\n");
+    lastp = 0;
+    while(p>=0) {
+        eachrow.clear();
+        rawrow = fulllist.substr(lastp, p-lastp);
+
+        q = rawrow.find(' ');
+        lastq = 0;
+        for(int i=0; i<8; i++) {
+            item = rawrow.substr(lastq, q-lastq);
+            eachrow.push_back(item);
+            lastq = q + 1;
+            q = rawrow.find(' ', lastq);
+        }
+        item = rawrow.substr(lastq);
+        eachrow.push_back(item);
+        filelist.push_back(eachrow);
+
+        lastp = p + 2;
+        p = fulllist.find("\r\n", lastp);
     }
     recvControl(226);
     return 0;
@@ -318,4 +345,14 @@ int Client::upFile(string localName) {
     closesocket(dataSocket);
     recvControl(226);
     listPwd();
+}
+
+void Client::removeSpace(string & src) {
+    int p, q;
+    p = src.find(' ');
+    while(p>=0) {
+        for(q=p+1; src[q]==' '; q++);
+        src.erase(p+1, q-p-1);
+        p = src.find(' ', p+1);
+    }
 }

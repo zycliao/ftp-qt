@@ -48,13 +48,24 @@ void ClientThread::stop() {
 
 void ClientThread::flushList() {
     emit emitClearList();
-    emit emitListItem(QString("."));
-    emit emitListItem(QString(".."));
-    int num = curClient->pwdFiles.size();
-    QString item;
+    int num = curClient->filelist.size();
+    QString type, size, name;
+    std::vector<std::string> eachrow;
     for(int i=0; i<num; i++) {
-        item = QString::fromStdString(curClient->pwdFiles[i]);
-        emit emitListItem(item);
+        eachrow = curClient->filelist[i];
+        type = QString::fromStdString(eachrow[0].substr(0, 1));
+        if(type=="-")   continue;
+        size = QString::fromStdString(eachrow[4]);
+        name = QString::fromStdString(eachrow[8]);
+        emit emitListItem(type, size, name);
+    }
+    for(int i=0; i<num; i++) {
+        eachrow = curClient->filelist[i];
+        type = QString::fromStdString(eachrow[0].substr(0, 1));
+        if(type=="d")   continue;
+        size = QString::fromStdString(eachrow[4]);
+        name = QString::fromStdString(eachrow[8]);
+        emit emitListItem(type, size, name);
     }
 }
 

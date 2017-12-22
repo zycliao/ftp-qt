@@ -24,7 +24,7 @@ private:
 private slots:
     void stop();
 signals:
-    void emitListItem(QString);
+    void emitListItem(QString, QString, QString);
     void emitInfo(QString);
     void emitSuccess();
     void emitClearList();

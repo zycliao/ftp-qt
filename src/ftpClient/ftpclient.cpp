@@ -7,7 +7,7 @@ ftpClient::ftpClient(QWidget *parent) :
 {
     clientThread = new ClientThread();
 
-    connect(clientThread, SIGNAL(emitListItem(QString)), this, SLOT(recvListItem(QString)));
+    connect(clientThread, SIGNAL(emitListItem(QString, QString, QString)), this, SLOT(recvListItem(QString, QString, QString)));
     connect(clientThread, SIGNAL(emitSuccess()), this, SLOT(recvSuccess()));
     connect(clientThread, SIGNAL(finished()), clientThread, SLOT(stop()));
     connect(clientThread, SIGNAL(emitClearList()), this, SLOT(recvClearList()));
@@ -41,27 +41,16 @@ void ftpClient::on_connectButton_clicked()
         clientThread->start();
         connected = false;
         ui->connectButton->setText("Connect");
-        ui->fileList->clear();
     }
-    }
-}
-
-void ftpClient::on_fileList_itemDoubleClicked(QListWidgetItem *item)
-{
-    QString a = item->text();
-    if(!clientThread->isRunning()) {
-    clientThread->arglist[0] = a.toStdString();
-    clientThread->task = TCd;
-    clientThread->start();
     }
 }
 
 void ftpClient::on_downButton_clicked()
 {
-    QListWidgetItem* curItem = ui->fileList->currentItem();
+    QTreeWidgetItem* curItem = ui->fileTree->currentItem();
     QString downName;
     if(curItem)
-        downName = curItem->text();
+        downName = curItem->text(2);
     else
         return;
     QString saveDir = QFileDialog::getExistingDirectory(this, "Choose save path");
@@ -73,8 +62,12 @@ void ftpClient::on_downButton_clicked()
     }
 }
 
-void ftpClient::recvListItem(QString item) {
-    ui->fileList->addItem(item);
+void ftpClient::recvListItem(QString type, QString size, QString name) {
+    QTreeWidgetItem* item = new QTreeWidgetItem(ui->fileTree);
+    item->setText(0, type);
+    item->setText(1, size);
+    item->setText(2, name);
+    ui->fileTree->addTopLevelItem(item);
 }
 
 void ftpClient::recvInfo(QString info) {
@@ -100,7 +93,7 @@ void ftpClient::recvSuccess() {
 }
 
 void ftpClient::recvClearList() {
-    ui->fileList->clear();
+    ui->fileTree->clear();
 }
 
 void ftpClient::on_upButton_clicked()
@@ -110,4 +103,17 @@ void ftpClient::on_upButton_clicked()
     clientThread->task = TUp;
     clientThread->arglist[0] = localFile;
     clientThread->start();
+}
+
+void ftpClient::on_fileTree_itemDoubleClicked(QTreeWidgetItem *item, int column)
+{
+    QString type = item->text(0);
+    if(type!="d")
+        return;
+    QString file = item->text(2);
+    if(!clientThread->isRunning()) {
+        clientThread->arglist[0] = file.toStdString();
+        clientThread->task = TCd;
+        clientThread->start();
+    }
 }

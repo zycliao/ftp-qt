@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>633</width>
-    <height>411</height>
+    <width>734</width>
+    <height>404</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,9 +17,9 @@
    <widget class="QListWidget" name="fileList">
     <property name="geometry">
      <rect>
-      <x>340</x>
-      <y>0</y>
-      <width>281</width>
+      <x>190</x>
+      <y>340</y>
+      <width>201</width>
       <height>341</height>
      </rect>
     </property>
@@ -47,7 +47,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>192.168.242.139</string>
+     <string>192.168.242.141</string>
     </property>
    </widget>
    <widget class="QLineEdit" name="userEdit">
@@ -177,13 +177,54 @@
      <string>Delete</string>
     </property>
    </widget>
+   <widget class="QTreeWidget" name="fileTree">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>10</y>
+      <width>381</width>
+      <height>331</height>
+     </rect>
+    </property>
+    <column>
+     <property name="text">
+      <string>type</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>size</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>name</string>
+     </property>
+    </column>
+    <item>
+     <property name="text">
+      <string>1</string>
+     </property>
+     <property name="text">
+      <string>3</string>
+     </property>
+     <property name="text">
+      <string>2</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>2</string>
+     </property>
+    </item>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>633</width>
+     <width>734</width>
      <height>23</height>
     </rect>
    </property>
