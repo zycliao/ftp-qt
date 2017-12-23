@@ -12,6 +12,9 @@ public:
     explicit ServerThread();
     ~ServerThread();
     Server* curServer;
+    QString ip;
+    QString time;
+    int num;
 
 protected:
     void run();

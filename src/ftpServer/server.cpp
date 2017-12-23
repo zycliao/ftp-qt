@@ -23,55 +23,20 @@ Server::Server()
 Server::~Server()
 {
     delete config;
-    closesocket(listenSocket);
     closesocket(clientSocket);
     closesocket(dataSocket);
     WSACleanup();
 }
 
 int Server::setup() {
-    WSADATA dat;
-
     if(!config->configed) {
         cout << "Not configed" << endl;
         return -1;
     }
     rootdir = config->wd;
     pwd = abs2rel(rootdir);
-
-    if(WSAStartup(MAKEWORD(2,2),&dat)!=0)
-    {
-        cout << "Init Falied: " << GetLastError() << endl;
-        system("pause");
-        return -1;
-    }
-
-    listenSocket=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
-    if(listenSocket==INVALID_SOCKET)
-    {
-        cout << "Creating Listen Socket Failed: " << GetLastError() << endl;
-        system("pause");
-        return -1;
-    }
-
-    listenAddr.sin_family = AF_INET;
-    listenAddr.sin_port = htons(PORT);
-    listenAddr.sin_addr.S_un.S_addr = INADDR_ANY;
-    if(bind(listenSocket, (LPSOCKADDR)&listenAddr, sizeof(listenAddr)) == SOCKET_ERROR) {
-        cout << "Bind Error: " << GetLastError() << endl;
-        system("pause");
-        return -1;
-    }
-
-    if(listen(listenSocket, 5) == SOCKET_ERROR) {
-        cout << "Listen Error: " << GetLastError() << endl;
-        system("pause");
-        return -1;
-    }
-
     dataListenAddr.sin_family = AF_INET;
     dataListenAddr.sin_addr.S_un.S_addr = INADDR_ANY;
-
     getLocalIp();
 
     return 0;
@@ -81,10 +46,6 @@ int Server::listenClient() {
     int ret;
     int pasvPort, pasvArg1, pasvArg2;
     string pasvIp;
-    int remoteAddrLen = sizeof(remoteAddr);
-    clientSocket = accept(listenSocket, (SOCKADDR *)&remoteAddr, &remoteAddrLen);
-    if(clientSocket == INVALID_SOCKET) return -1;
-    cout << "Client Socket Received!" << endl;
     sendMessage("220 Welcome to FTP server. Author: Patrick Liao.");
     if(!waitMessage("USER")) return -1;
     string username, password;
@@ -465,4 +426,8 @@ string Server::rel2abs(string relpath) {
         return "ERROR";
     abspath = rootdir + relpath;
     return abspath;
+}
+
+void Server::bindClientSocket(SOCKET c) {
+    clientSocket = c;
 }

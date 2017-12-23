@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>572</width>
-    <height>375</height>
+    <width>610</width>
+    <height>329</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -234,21 +234,6 @@
      <string>Allow anonymous</string>
     </property>
    </widget>
-   <widget class="QListWidget" name="listWidget">
-    <property name="geometry">
-     <rect>
-      <x>250</x>
-      <y>10</y>
-      <width>201</width>
-      <height>201</height>
-     </rect>
-    </property>
-    <item>
-     <property name="text">
-      <string>1</string>
-     </property>
-    </item>
-   </widget>
    <widget class="QPushButton" name="dirButton">
     <property name="geometry">
      <rect>
@@ -262,20 +247,30 @@
      <string>Choose work directory</string>
     </property>
    </widget>
-   <widget class="QListWidget" name="listWidget_2">
+   <widget class="QTreeWidget" name="infoTree">
     <property name="geometry">
      <rect>
-      <x>450</x>
+      <x>250</x>
       <y>10</y>
-      <width>111</width>
-      <height>201</height>
+      <width>351</width>
+      <height>251</height>
      </rect>
     </property>
-    <item>
+    <column>
      <property name="text">
-      <string>1</string>
+      <string>No</string>
      </property>
-    </item>
+    </column>
+    <column>
+     <property name="text">
+      <string>IP</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>Time</string>
+     </property>
+    </column>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
@@ -283,7 +278,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>572</width>
+     <width>610</width>
      <height>23</height>
     </rect>
    </property>

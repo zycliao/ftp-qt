@@ -21,15 +21,13 @@ public:
     ~Server();
     int setup();
     int listenClient();
+    void bindClientSocket(SOCKET c);
     ServerConfig* config;
 
 private:
-    SOCKET listenSocket;
     SOCKET clientSocket;
     SOCKET dataListenSocket;
     SOCKET dataSocket;
-    SOCKADDR_IN listenAddr;
-    SOCKADDR_IN remoteAddr;
     SOCKADDR_IN dataListenAddr;
     SOCKADDR_IN dataAddr;
     std::string buf;
