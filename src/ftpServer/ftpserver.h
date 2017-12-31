@@ -23,12 +23,14 @@ class ftpServer : public QMainWindow
 public:
     explicit ftpServer(QWidget *parent = 0);
     ~ftpServer();
+    void stopAll();
 
 private slots:
     void on_startButton_clicked();
     void on_dirButton_clicked();
     void on_maxClientSlide_sliderMoved(int position);
     void recvSocket(SOCKET, QString);
+    void recvSubThreadStop(int num);
 
 private:
     void flushList();

@@ -16,6 +16,8 @@ ftpServer::ftpServer(QWidget *parent) :
 
 ftpServer::~ftpServer()
 {
+    stopAll();
+    listenThread->stop();
     delete ui;
     delete serverConfig;
     delete listenThread;
@@ -39,9 +41,10 @@ void ftpServer::on_startButton_clicked()
         ui->startButton->setText("End");
     }
     else {
-        subThread.clear();
-        //serverThread->stop();
+        stopAll();
+        listenThread->stop();
         connected = false;
+        ui->infoTree->clear();
         ui->startButton->setText("Start");
     }
 }
@@ -70,12 +73,13 @@ void ftpServer::recvSocket(SOCKET s, QString ip) {
     dt.setTime(time.currentTime());
     dt.setDate(date.currentDate());
     serverThread->time = dt.toString("yyyy.MM.dd hh:mm:ss");
-    connect(serverThread, SIGNAL(finished()), serverThread, SLOT(stop()));
     serverThread->ip = ip;
     serverThread->curServer->bindClientSocket(s);
     serverThread->curServer->config = serverConfig;
     subThread.push_back(serverThread);
     serverThread->num = subThread.size() - 1;
+    //connect(serverThread, SIGNAL(finished()), serverThread, SLOT(stop()));
+    connect(serverThread, SIGNAL(emitSubThreadStop(int)), this, SLOT(recvSubThreadStop(int)));
     serverThread->start();
     flushList();
 }
@@ -84,10 +88,27 @@ void ftpServer::flushList() {
     ui->infoTree->clear();
     QTreeWidgetItem* item;;
     for(int i=0; i<subThread.size(); i++) {
+        subThread[i]->num = i;
         item = new QTreeWidgetItem(ui->infoTree);
         item->setText(0, QString::fromStdString(to_string(i+1)));
         item->setText(1, subThread[i]->ip);
         item->setText(2, subThread[i]->time);
         ui->infoTree->addTopLevelItem(item);
     }
+}
+
+void ftpServer::recvSubThreadStop(int num) {
+    delete subThread[num];
+    subThread.erase(subThread.begin()+num);
+    flushList();
+    listenThread->cur_client--;
+}
+
+void ftpServer::stopAll() {
+    listenThread->cur_client = 0;
+    for(int i=0; i<subThread.size(); i++) {
+        subThread[i]->forceStop();
+        delete subThread[i];
+    }
+    subThread.clear();
 }

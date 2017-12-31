@@ -17,15 +17,12 @@ void wchar2Char(const wchar_t *wchar, char *chr, int length)
 
 Server::Server()
 {
-    config = new ServerConfig;
 }
 
 Server::~Server()
 {
-    delete config;
     closesocket(clientSocket);
     closesocket(dataSocket);
-    WSACleanup();
 }
 
 int Server::setup() {
@@ -221,7 +218,6 @@ int Server::listenClient() {
                 send(dataSocket, databuf, count, 0);
             }
             memset(databuf, 0, DATABUFLEN);
-            send(dataSocket, databuf, 1, 0);
             fclose(ifile);
             closesocket(dataSocket);
             sendMessage("226 transfer complete.");
@@ -234,13 +230,10 @@ int Server::listenClient() {
             sendMessage("150 OK to send data.");
             string dstFilename = rel2abs(pathConcat(pwd, arg));
             ofstream ofile;
-            ofile.open(dstFilename);
+            ofile.open(dstFilename, ios_base::binary);
             ret = recv(dataSocket, tempbuf, DATABUFLEN, 0);
             while(ret>0) {
-                tempbuf[ret] = '\0';
-                // TODO:FILE
-                // EMERGENCY!!!!
-                ofile << tempbuf;
+                ofile.write(tempbuf, ret);
                 ret = recv(dataSocket, tempbuf, DATABUFLEN, 0);
             }
             ofile.close();
@@ -260,6 +253,8 @@ int Server::listenClient() {
         }
 
     }
+
+    cout << "client quit" << endl;
 }
 
 //private functions-----------------------------------------------
@@ -379,7 +374,8 @@ vector<string> Server::getFileSize(string fname) {
     wfullname[strfullname.size()] = 0;
     DWORD fAttr = GetFileAttributes(wfullname);
     delete wfullname;
-    if(fAttr == INVALID_FILE_ATTRIBUTES) {
+    if(fAttr == INVALID_FILE_ATTRIBUTES || fAttr == FILE_ATTRIBUTE_HIDDEN
+            || fAttr == FILE_ATTRIBUTE_SYSTEM || fAttr == 18) {
         return sizeAndAttrib;
     }
     if(fAttr == FILE_ATTRIBUTE_DIRECTORY) {

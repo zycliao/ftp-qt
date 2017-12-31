@@ -20,12 +20,12 @@ public:
     void stop();
 
     int max_client;
+    int cur_client;
 
 protected:
     void run();
 
 private:
-    int cur_client;
     bool stopped;
     SOCKET listenSocket;
     SOCKET clientSocket;

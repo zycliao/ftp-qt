@@ -100,25 +100,18 @@ int Client::changeDir(string tardir) {
 int Client::downFile(string remoteName, string localDir){
     string localFile = localDir + "/" + remoteName;
     ofstream ofile;
-    ofile.open(localFile);
+    ofile.open(localFile, ios_base::binary);
     intoPasv();
-    int fsize = getFileSize(remoteName);
+    getFileSize(remoteName);
     executeCmd("RETR "+remoteName);
     recvControl(150);
     memset(databuf, 0, DATABUFLEN);
-    int recvNum;
-    recvNum = min(DATABUFLEN, fsize);
-    recv(dataSocket, databuf, recvNum, 0);
-    fsize -= recvNum;
-    for( ; fsize > 0;) {
-        databuf[recvNum] = '\0';
-        ofile<<databuf;
-        recvNum = min(DATABUFLEN, fsize);
-        recv(dataSocket, databuf, recvNum, 0);
-        fsize -= recvNum;
+    int ret = recv(dataSocket, databuf, DATABUFLEN, 0);
+    while(ret>0)
+    {
+        ofile.write(databuf, ret);
+        ret = recv(dataSocket, databuf, DATABUFLEN, 0);
     }
-    databuf[recvNum] = '\0';
-    ofile<<databuf;
     ofile.close();
     closesocket(dataSocket);
     recvControl(226);

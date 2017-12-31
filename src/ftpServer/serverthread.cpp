@@ -7,14 +7,14 @@ ServerThread::ServerThread() {
 }
 
 ServerThread::~ServerThread() {
-    stop();  //TODO!!!!!!!!!!!1
     delete curServer;
 }
 
 void ServerThread::run() {
-    std::cout<<"sub thread started"<<std::endl;
+    std::cout<<"subthread started"<<std::endl;
     curServer->setup();
     curServer->listenClient();
+    stop();
 }
 
 void ServerThread::stop() {
@@ -22,5 +22,10 @@ void ServerThread::stop() {
     isInterruptionRequested();
     quit();
     wait();
+    emit emitSubThreadStop(num);
 }
 
+void ServerThread::forceStop() {
+    std::cout<<"subthread terminated"<<std::endl;
+    terminate();
+}

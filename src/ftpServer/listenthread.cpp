@@ -9,7 +9,8 @@ ListenThread::ListenThread() {
 }
 
 ListenThread::~ListenThread() {
-
+    closesocket(clientSocket);
+    closesocket(listenSocket);
 }
 
 int ListenThread::setup() {
@@ -54,7 +55,10 @@ void ListenThread::run() {
     while(true) {
         if(cur_client<max_client) {
             clientSocket = accept(listenSocket, (SOCKADDR *)&remoteAddr, &remoteAddrLen);
-            if(clientSocket == INVALID_SOCKET) continue;
+            if(clientSocket == INVALID_SOCKET) {
+                cout << "Create client socket error!" << endl;
+                continue;
+            }
             cur_client++;
             b1 = to_string(remoteAddr.sin_addr.S_un.S_un_b.s_b1);
             b2 = to_string(remoteAddr.sin_addr.S_un.S_un_b.s_b2);
@@ -71,4 +75,9 @@ void ListenThread::run() {
 
 void ListenThread::stop() {
     terminate();
+    int a = this->isRunning();
+    int b = this->isFinished();
+    closesocket(clientSocket);
+    closesocket(listenSocket);
+    WSACleanup();
 }

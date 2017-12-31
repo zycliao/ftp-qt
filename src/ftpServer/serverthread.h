@@ -11,6 +11,7 @@ class ServerThread : public QThread
 public:
     explicit ServerThread();
     ~ServerThread();
+    void forceStop();
     Server* curServer;
     QString ip;
     QString time;
@@ -25,7 +26,8 @@ private:
 private slots:
     void stop();
 
-//signals:
+signals:
+    void emitSubThreadStop(int num);
 
 };
 
